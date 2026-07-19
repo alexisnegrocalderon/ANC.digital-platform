@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg: #0a0a09;
+  --color-bg-elevated: #131311;
+  --color-fg: #f5f4f0;
+  --color-muted: #93918a;
+  --color-border: rgba(245, 244, 240, 0.1);
+  --color-accent: #d7ff3d;
+  --color-accent-foreground: #0a0a09;
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-fg: var(--color-fg);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-display);
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+/* Glassmorphism accents — used sparingly (nav, portfolio hover, featured cards).
+   Always needs color/imagery behind it to read as glass. */
+.glass {
+  background: rgba(245, 244, 240, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(245, 244, 240, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 244, 240, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.glass-strong {
+  background: rgba(245, 244, 240, 0.09);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(245, 244, 240, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 244, 240, 0.16),
+    0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+/* Darker/more opaque variant for functional overlays (mobile nav) where
+   legibility over busy content matters more than the glass tint. */
+.glass-nav {
+  background: rgba(9, 9, 8, 0.82);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(245, 244, 240, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 244, 240, 0.12),
+    0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass,
+  .glass-strong {
+    background: rgba(19, 19, 17, 0.92);
+  }
+  .glass-nav {
+    background: rgba(9, 9, 8, 0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
