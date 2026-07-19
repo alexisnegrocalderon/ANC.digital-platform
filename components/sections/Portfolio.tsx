@@ -12,21 +12,21 @@ const PROJECTS = [
     title: "Sitio con identidad propia",
     description:
       "Storytelling de scroll, motion a medida y una estética que no se confunde con ninguna plantilla.",
-    gradient: "from-[#d7ff3d]/25 via-transparent to-transparent",
+    gradient: "from-[#2F6FFF]/25 via-[#00D4E0]/15 to-transparent",
   },
   {
     tag: "Plataforma / SaaS",
     title: "UX pensada para convertir",
     description:
       "Interfaces limpias, flujos claros y un producto que se siente tan bien como se ve.",
-    gradient: "from-[#f5f4f0]/20 via-transparent to-transparent",
+    gradient: "from-[#FF3D9A]/25 via-[#7B4DFF]/15 to-transparent",
   },
   {
     tag: "E-commerce",
     title: "Experiencia de compra fluida",
     description:
       "Checkout simple, performance cuidado y animaciones que acompañan sin estorbar.",
-    gradient: "from-[#d7ff3d]/15 via-[#f5f4f0]/10 to-transparent",
+    gradient: "from-[#00D4E0]/20 via-[#7B4DFF]/12 to-transparent",
   },
 ];
 
@@ -68,7 +68,7 @@ export function Portfolio() {
               key={project.title}
               href="#contacto"
               data-portfolio-card
-              className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl border border-border p-8"
+              className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl border border-border p-8 shadow-[0_4px_24px_-8px_rgba(14,14,16,0.08)] transition-shadow duration-300 hover:shadow-[0_20px_48px_-12px_rgba(123,77,255,0.3)]"
             >
               <div
                 className={`absolute inset-0 bg-gradient-to-br ${project.gradient} bg-bg-elevated`}

@@ -70,7 +70,7 @@ export function Services() {
             <div
               key={title}
               data-service-card
-              className="rounded-2xl border border-border bg-bg-elevated p-8 transition-colors hover:border-[rgba(215,255,61,0.4)]"
+              className="rounded-2xl border border-border bg-bg-elevated p-8 shadow-[0_4px_24px_-8px_rgba(14,14,16,0.08)] transition-[border-color,box-shadow] duration-300 hover:border-[rgba(255,61,154,0.35)] hover:shadow-[0_16px_40px_-12px_rgba(123,77,255,0.25)]"
             >
               <Icon className="text-accent" size={28} strokeWidth={1.5} />
               <h3 className="font-display mt-6 text-xl text-fg">{title}</h3>

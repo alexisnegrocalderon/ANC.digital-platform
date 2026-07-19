@@ -67,7 +67,7 @@ export function Nav() {
             key={link.href}
             href={link.href}
             onClick={() => setOpen(false)}
-            className="rounded-xl px-3 py-2.5 text-sm text-fg/90 hover:bg-[rgba(245,244,240,0.08)]"
+            className="rounded-xl px-3 py-2.5 text-sm text-fg/90 hover:bg-[rgba(14,14,16,0.06)]"
           >
             {link.label}
           </a>
@@ -75,7 +75,7 @@ export function Nav() {
         <a
           href="#contacto"
           onClick={() => setOpen(false)}
-          className="mt-1 rounded-xl bg-accent px-3 py-2.5 text-center text-sm font-medium text-accent-foreground"
+          className="mt-1 rounded-xl bg-[linear-gradient(135deg,var(--color-aurora-magenta),var(--color-aurora-violet))] px-3 py-2.5 text-center text-sm font-medium text-accent-foreground"
         >
           Hablemos
         </a>

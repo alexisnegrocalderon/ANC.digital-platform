@@ -80,7 +80,7 @@ export function Process() {
         <div className="relative mt-16 flex flex-col gap-12 sm:pl-4">
           <span
             data-step-line
-            className="absolute top-2 bottom-2 left-4 hidden w-px bg-border sm:block"
+            className="absolute top-2 bottom-2 left-4 hidden w-px bg-[linear-gradient(to_bottom,var(--color-aurora-blue),var(--color-aurora-magenta),var(--color-aurora-violet))] sm:block"
           />
 
           {STEPS.map((step) => (

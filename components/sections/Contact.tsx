@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { useGsap, prefersReducedMotion, gsap } from "@/lib/gsap";
 import { Container } from "@/components/ui/Container";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 
 export function Contact() {
   const scope = useRef<HTMLElement>(null);
@@ -28,10 +29,9 @@ export function Contact() {
   );
 
   return (
-    <section id="contacto" ref={scope} className="relative py-28 sm:py-36">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,_rgba(215,255,61,0.14),_transparent_70%)] blur-3xl" />
-      </div>
+    <section id="contacto" ref={scope} className="relative overflow-hidden py-28 sm:py-36">
+      <AuroraBackground className="opacity-70" parallax={false} />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,var(--color-bg),transparent_15%,transparent_85%,var(--color-bg))]" />
 
       <Container className="relative">
         <div
@@ -52,7 +52,7 @@ export function Contact() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <a
               href="mailto:hola@negrocalderon.com"
-              className="group inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-shadow hover:shadow-[0_0_32px_-4px_var(--color-accent)]"
+              className="group inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--color-aurora-magenta),var(--color-aurora-violet))] px-6 py-3 text-sm font-medium text-accent-foreground shadow-[0_8px_24px_-8px_rgba(255,61,154,0.5)] transition-shadow hover:shadow-[0_12px_32px_-6px_rgba(123,77,255,0.55)]"
             >
               Escribime un email
               <ArrowUpRight
@@ -64,7 +64,7 @@ export function Contact() {
               href="https://wa.me/56900000000"
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-medium text-fg transition-colors hover:bg-[rgba(245,244,240,0.08)]"
+              className="glass group inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-fg transition-colors hover:bg-[rgba(255,255,255,0.75)]"
             >
               WhatsApp
               <ArrowUpRight

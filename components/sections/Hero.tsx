@@ -4,14 +4,13 @@ import { useRef } from "react";
 import { gsap, useGsap, prefersReducedMotion } from "@/lib/gsap";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 
 const LINE_1 = "No hacemos sitios web.";
 const LINE_2 = "Hacemos primeras impresiones.";
 
 export function Hero() {
   const scope = useRef<HTMLElement>(null);
-  const blobARef = useRef<HTMLDivElement>(null);
-  const blobBRef = useRef<HTMLDivElement>(null);
 
   useGsap(
     () => {
@@ -51,30 +50,6 @@ export function Hero() {
           { opacity: 0, duration: reduced ? 0.01 : 0.6 },
           "-=0.4",
         );
-
-      if (reduced) return;
-
-      const quickA = {
-        x: gsap.quickTo(blobARef.current, "x", { duration: 0.8, ease: "power3.out" }),
-        y: gsap.quickTo(blobARef.current, "y", { duration: 0.8, ease: "power3.out" }),
-      };
-      const quickB = {
-        x: gsap.quickTo(blobBRef.current, "x", { duration: 1.1, ease: "power3.out" }),
-        y: gsap.quickTo(blobBRef.current, "y", { duration: 1.1, ease: "power3.out" }),
-      };
-
-      function onPointerMove(event: PointerEvent) {
-        const { innerWidth, innerHeight } = window;
-        const relX = event.clientX / innerWidth - 0.5;
-        const relY = event.clientY / innerHeight - 0.5;
-        quickA.x(relX * 60);
-        quickA.y(relY * 60);
-        quickB.x(relX * -40);
-        quickB.y(relY * -40);
-      }
-
-      window.addEventListener("pointermove", onPointerMove);
-      return () => window.removeEventListener("pointermove", onPointerMove);
     },
     [],
     scope,
@@ -86,22 +61,13 @@ export function Hero() {
       ref={scope}
       className="relative flex min-h-svh items-center overflow-hidden pt-28 pb-20"
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          ref={blobARef}
-          className="absolute left-1/4 top-1/3 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle,_rgba(245,244,240,0.14),_transparent_70%)] blur-3xl"
-        />
-        <div
-          ref={blobBRef}
-          className="absolute right-1/4 bottom-1/4 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,_rgba(215,255,61,0.12),_transparent_70%)] blur-3xl"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,var(--color-bg)_92%)]" />
-      </div>
+      <AuroraBackground />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent,var(--color-bg)_92%)]" />
 
       <Container className="relative">
         <span
           data-hero-eyebrow
-          className="glass mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-xs uppercase tracking-[0.2em] text-muted"
+          className="glass mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-xs uppercase tracking-[0.2em] text-fg/70"
         >
           Diseño · UX/UI · Motion
         </span>
@@ -113,7 +79,10 @@ export function Hero() {
             </span>
           </span>
           <span className="block overflow-hidden">
-            <span data-hero-line className="block text-muted">
+            <span
+              data-hero-line
+              className="block bg-[linear-gradient(135deg,var(--color-aurora-blue),var(--color-aurora-magenta)_50%,var(--color-aurora-violet))] bg-clip-text text-transparent"
+            >
               {LINE_2}
             </span>
           </span>
@@ -121,7 +90,7 @@ export function Hero() {
 
         <p
           data-hero-sub
-          className="mt-8 max-w-lg text-lg text-muted sm:text-xl"
+          className="mt-8 max-w-lg text-lg text-fg/70 sm:text-xl"
         >
           Diseño, UX/UI y motion a medida para marcas que quieren destacar —
           no otra plantilla genérica armada con IA.

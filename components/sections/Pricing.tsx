@@ -6,6 +6,7 @@ import { gsap, useGsap, prefersReducedMotion } from "@/lib/gsap";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { cn } from "@/lib/cn";
 
 const PLANS = [
@@ -68,10 +69,9 @@ export function Pricing() {
   );
 
   return (
-    <section id="precios" ref={scope} className="relative py-28 sm:py-36">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(circle,_rgba(215,255,61,0.08),_transparent_70%)] blur-3xl" />
-      </div>
+    <section id="precios" ref={scope} className="relative overflow-hidden py-28 sm:py-36">
+      <AuroraBackground className="opacity-60" parallax={false} />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,var(--color-bg),transparent_15%,transparent_85%,var(--color-bg))]" />
 
       <Container className="relative">
         <SectionHeading
