@@ -623,8 +623,18 @@ h2 {
   padding: 13px 14px;
 }
 
-.event-checkout input:focus {
+.event-checkout input:focus,
+.event-checkout select:focus {
   border-color: var(--violet-soft);
+}
+
+.event-checkout select {
+  background: #272727;
+  border: 1px solid var(--line);
+  color: var(--paper);
+  font: inherit;
+  outline: none;
+  padding: 13px 14px;
 }
 
 .checkout-button {
@@ -677,6 +687,25 @@ h2 {
 .order-success span {
   color: #9ec5ae;
   font-size: 0.7rem;
+}
+
+.checkout-link {
+  align-items: center;
+  background: transparent;
+  border-bottom: 1px solid rgba(200, 234, 216, 0.45);
+  color: #d8f1e2;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.72rem;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 0 0 3px;
+  text-align: left;
+}
+
+.checkout-link:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .footer {

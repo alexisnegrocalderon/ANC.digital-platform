@@ -4,6 +4,7 @@ import { businessModules, businesses, moduleCatalog } from "../drizzle/schema";
 import { MODULE_MANIFESTS, BUSINESS_PRESETS } from "../modules/core/registry";
 import { enableBusinessModules, disableBusinessModules } from "./services/businessModules";
 import { eventsRouter } from "../modules/events/router";
+import { paymentsRouter } from "../modules/payments/router";
 import type { ModuleKey } from "../shared/module";
 import { businessDatabaseProcedure, databaseProcedure, publicProcedure, router } from "./trpc";
 
@@ -44,6 +45,7 @@ export const appRouter = router({
     list: publicProcedure.query(() => BUSINESS_PRESETS),
   }),
   events: eventsRouter,
+  payments: paymentsRouter,
   business: router({
     current: businessDatabaseProcedure.query(async ({ ctx }) => {
       const result = await ctx.db

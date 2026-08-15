@@ -14,7 +14,7 @@
 | Registro modular | 20 módulos declarados con dependencias, permisos, navegación y presets. |
 | Vertical Eventos | Eventos, entradas, pedidos, tickets, checkout demo y validación de acceso. |
 | Autenticación productiva | Pendiente; el contexto por header solo funciona en desarrollo con `DEV_BUSINESS_CONTEXT_ENABLED=true`. |
-| Pagos reales y facturación | Pendiente; el MVP deja `paymentStatus` en `pending`. |
+| Pagos | Stripe Checkout Sessions y MercadoPago Checkout Pro con webhooks firmados, idempotencia local y estados persistidos. |
 
 ## Puesta en marcha local
 
@@ -39,6 +39,8 @@ Durante la etapa local, el frontend consulta el negocio demo `anc-demo` mediante
 | `pnpm test` | Ejecutar pruebas unitarias de registro, activación y configuración segura. |
 | `pnpm run build` | Compilar frontend Vite y backend Express. |
 | `pnpm run neon:smoke` | Confirmar conectividad real con Neon sin mostrar credenciales. |
+| `pnpm run payments:schema-smoke` | Confirmar que las tablas de pagos existen en Neon. |
+| `pnpm run payments:webhook-smoke` | Probar webhook Stripe firmado, procesamiento y duplicado idempotente. |
 | `pnpm run db:generate` | Generar migraciones desde `drizzle/schema.ts`. |
 | `pnpm run db:migrate` | Aplicar migraciones usando `DIRECT_DATABASE_URL`. |
 | `pnpm run seed:core` | Sincronizar el catálogo de 20 módulos y crear `anc-demo`. |
@@ -65,11 +67,11 @@ Para reducir mantenimiento, la aplicación se mantiene como monolito modular tip
 
 ## Verificación realizada
 
-El proyecto pasó `pnpm test`, `pnpm run check`, `pnpm run build` y `pnpm run neon:smoke`. También se verificó el runtime tRPC contra Neon: health reporta la base configurada, el negocio demo y sus módulos activos se leen desde la base, y el vertical Eventos completa el flujo de creación de pedido, emisión de ticket, primera validación aceptada y segunda validación rechazada por reuso.
+El proyecto pasó `pnpm test`, `pnpm run check`, `pnpm run build`, `pnpm run neon:smoke`, `pnpm run payments:schema-smoke` y `pnpm run payments:webhook-smoke`. También se verificó que una firma Stripe inválida devuelve `401`, que el primer webhook actualiza la orden a `paid` y que un evento repetido devuelve `200` sin repetir efectos. El runtime tRPC contra Neon continúa leyendo el negocio demo, sus módulos y el vertical Eventos desde la base.
 
 ## Pendientes antes de producción
 
-El siguiente hito debe incorporar autenticación real, membresías y permisos en las rutas; pago idempotente y adaptadores por proveedor; reserva atómica de stock; QR firmado; rate limiting; manejo estructurado de errores; pruebas de integración sobre una branch aislada de Neon; almacenamiento de archivos; notificaciones; observabilidad; y una estrategia comercial clara para separar demo, cliente individual y operación multi-tenant.
+Antes de producción se debe completar autenticación real, membresías y permisos para configurar proveedores; pruebas sandbox reales de cada cuenta; resolver la ventana de fallo de red específica de MercadoPago Preferences API mediante Orders API o consulta/reconciliación; añadir reserva atómica de stock, QR firmado, rate limiting, observabilidad, backups y pruebas de integración sobre una branch aislada de Neon. Stripe y MercadoPago no deben considerarse activos hasta configurar sus secretos y URLs HTTPS en cada negocio.
 
 ## Referencias técnicas
 

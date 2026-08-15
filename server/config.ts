@@ -11,6 +11,21 @@ export function validateRuntimeConfig(env: NodeJS.ProcessEnv = process.env) {
     throw new Error("DEV_BUSINESS_CONTEXT_ENABLED must be disabled in production.");
   }
 
+  if (production && !env.PUBLIC_APP_URL?.startsWith("https://")) {
+    throw new Error("PUBLIC_APP_URL must be an HTTPS URL in production.");
+  }
+
+  if (production && !env.PAYMENTS_ENCRYPTION_KEY?.trim()) {
+    throw new Error("PAYMENTS_ENCRYPTION_KEY is required in production.");
+  }
+
+  if (production && env.PAYMENTS_ENCRYPTION_KEY) {
+    const encryptionKey = Buffer.from(env.PAYMENTS_ENCRYPTION_KEY, "base64");
+    if (encryptionKey.length !== 32) {
+      throw new Error("PAYMENTS_ENCRYPTION_KEY must be a base64-encoded 32-byte key.");
+    }
+  }
+
   return {
     production,
     databaseConfigured,

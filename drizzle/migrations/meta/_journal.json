@@ -15,6 +15,13 @@
       "when": 1786784286110,
       "tag": "0001_late_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786786015011,
+      "tag": "0002_lazy_dragon_man",
+      "breakpoints": true
     }
   ]
 }

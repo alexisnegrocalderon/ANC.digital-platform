@@ -307,6 +307,112 @@ export const orders = pgTable(
   }),
 );
 
+export const paymentProviderAccounts = pgTable(
+  "payment_provider_accounts",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 32 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    publicKey: text("public_key"),
+    encryptedAccessToken: text("encrypted_access_token"),
+    encryptedWebhookSecret: text("encrypted_webhook_secret"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessProviderUnique: uniqueIndex("payment_provider_accounts_business_provider_unique").on(
+      table.businessId,
+      table.provider,
+    ),
+    businessStatusIndex: index("payment_provider_accounts_business_status_idx").on(
+      table.businessId,
+      table.status,
+    ),
+  }),
+);
+
+export const paymentAttempts = pgTable(
+  "payment_attempts",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 32 }).notNull(),
+    operation: varchar("operation", { length: 32 }).notNull().default("checkout"),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
+    externalId: varchar("external_id", { length: 255 }),
+    externalReference: varchar("external_reference", { length: 255 }),
+    checkoutUrl: text("checkout_url"),
+    amountCents: integer("amount_cents").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    state: varchar("state", { length: 32 }).notNull().default("created"),
+    providerStatus: varchar("provider_status", { length: 64 }),
+    failureCode: varchar("failure_code", { length: 120 }),
+    failureMessage: text("failure_message"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessProviderIdempotencyUnique: uniqueIndex(
+      "payment_attempts_business_provider_idempotency_unique",
+    ).on(table.businessId, table.provider, table.operation, table.idempotencyKey),
+    businessProviderExternalUnique: uniqueIndex(
+      "payment_attempts_business_provider_external_unique",
+    ).on(table.businessId, table.provider, table.externalId),
+    orderIndex: index("payment_attempts_order_idx").on(table.businessId, table.orderId),
+    externalReferenceIndex: index("payment_attempts_external_reference_idx").on(
+      table.businessId,
+      table.provider,
+      table.externalReference,
+    ),
+    stateIndex: index("payment_attempts_business_state_idx").on(
+      table.businessId,
+      table.state,
+    ),
+  }),
+);
+
+export const paymentWebhookEvents = pgTable(
+  "payment_webhook_events",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 32 }).notNull(),
+    externalEventId: varchar("external_event_id", { length: 255 }).notNull(),
+    eventType: varchar("event_type", { length: 160 }).notNull(),
+    payloadHash: varchar("payload_hash", { length: 128 }).notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+    status: varchar("status", { length: 32 }).notNull().default("received"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    externalEventUnique: uniqueIndex("payment_webhook_events_business_provider_event_unique").on(
+      table.businessId,
+      table.provider,
+      table.externalEventId,
+    ),
+    statusIndex: index("payment_webhook_events_business_status_idx").on(
+      table.businessId,
+      table.status,
+    ),
+  }),
+);
+
 export const orderItems = pgTable(
   "order_items",
   {
@@ -394,6 +500,9 @@ export type DomainEvent = typeof domainEvents.$inferSelect;
 export type Event = typeof events.$inferSelect;
 export type TicketType = typeof ticketTypes.$inferSelect;
 export type Order = typeof orders.$inferSelect;
+export type PaymentProviderAccount = typeof paymentProviderAccounts.$inferSelect;
+export type PaymentAttempt = typeof paymentAttempts.$inferSelect;
+export type PaymentWebhookEvent = typeof paymentWebhookEvents.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Ticket = typeof tickets.$inferSelect;
 export type AccessLog = typeof accessLogs.$inferSelect;

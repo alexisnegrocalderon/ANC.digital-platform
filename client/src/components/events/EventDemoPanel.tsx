@@ -11,7 +11,9 @@ const money = new Intl.NumberFormat("es-CL", {
 export function EventDemoPanel() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [success, setSuccess] = useState<{ orderNumber: string; codes: string[] } | null>(null);
+  const [success, setSuccess] = useState<{ orderId: number; orderNumber: string; codes: string[] } | null>(null);
+  const [provider, setProvider] = useState<"stripe" | "mercadopago">("stripe");
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const events = trpc.events.listPublished.useQuery(undefined, { retry: false });
   const event = events.data?.[0];
   const ticketTypes = trpc.events.getTicketTypes.useQuery(
@@ -22,9 +24,11 @@ export function EventDemoPanel() {
   const order = trpc.events.createOrder.useMutation({
     onSuccess: (result) => {
       setSuccess({
+        orderId: result.order.id,
         orderNumber: result.order.orderNumber,
         codes: result.tickets.map((ticket: { code: string }) => ticket.code),
       });
+      setCheckoutUrl(null);
     },
   });
 
@@ -36,6 +40,10 @@ export function EventDemoPanel() {
       timeZone: "America/Santiago",
     }).format(new Date(event.startsAt));
   }, [event]);
+
+  const payment = trpc.payments.createCheckout.useMutation({
+    onSuccess: (result) => setCheckoutUrl(result.checkoutUrl),
+  });
 
   const handleSubmit = (submission: FormEvent<HTMLFormElement>) => {
     submission.preventDefault();
@@ -97,7 +105,7 @@ export function EventDemoPanel() {
             <Ticket size={16} />
           </div>
           <h3>Reserva tu acceso.</h3>
-          <p>Este formulario crea un pedido, emite un ticket con QR y deja el acceso listo para validar.</p>
+          <p>Este formulario crea el pedido y permite abrir un checkout hospedado sin exponer datos de tarjeta a ANC Platform.</p>
           <label>
             Nombre
             <input value={name} onChange={(eventInput) => setName(eventInput.target.value)} placeholder="Tu nombre" />
@@ -106,8 +114,15 @@ export function EventDemoPanel() {
             Email
             <input required type="email" value={email} onChange={(eventInput) => setEmail(eventInput.target.value)} placeholder="tu@email.com" />
           </label>
+          <label>
+            Pasarela
+            <select value={provider} onChange={(eventInput) => setProvider(eventInput.target.value as "stripe" | "mercadopago")}>
+              <option value="stripe">Stripe Checkout</option>
+              <option value="mercadopago">MercadoPago Checkout Pro</option>
+            </select>
+          </label>
           <button className="checkout-button" disabled={!event || !ticketType || order.isPending} type="submit">
-            {order.isPending ? "Procesando…" : "Generar ticket"} <ArrowUpRight size={16} />
+            {order.isPending ? "Creando pedido…" : "Crear pedido"} <ArrowUpRight size={16} />
           </button>
           {order.error ? <p className="form-error">{order.error.message}</p> : null}
           {success ? (
@@ -115,7 +130,30 @@ export function EventDemoPanel() {
               <Check size={18} />
               <div>
                 <strong>Pedido {success.orderNumber}</strong>
-                <span>Ticket emitido: {success.codes[0]}</span>
+                <span>Pedido preparado: {success.orderNumber}</span>
+                <span>Ticket demo: {success.codes[0]}</span>
+                <button
+                  className="checkout-link"
+                  disabled={payment.isPending}
+                  type="button"
+                  onClick={() =>
+                    payment.mutate({
+                      provider,
+                      orderId: success.orderId,
+                      successUrl: `${window.location.origin}/?payment=success`,
+                      cancelUrl: `${window.location.origin}/?payment=cancelled`,
+                    })
+                  }
+                >
+                  {payment.isPending ? "Preparando checkout…" : `Pagar con ${provider === "stripe" ? "Stripe" : "MercadoPago"}`}
+                  <ArrowUpRight size={16} />
+                </button>
+                {payment.error ? <span className="form-error">{payment.error.message}</span> : null}
+                {checkoutUrl ? (
+                  <a className="checkout-link" href={checkoutUrl} target="_blank" rel="noreferrer">
+                    Abrir checkout hospedado <ArrowUpRight size={16} />
+                  </a>
+                ) : null}
               </div>
             </div>
           ) : null}

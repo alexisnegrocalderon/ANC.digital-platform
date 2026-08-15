@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./routers";
 import { createContext } from "./context";
 import { validateRuntimeConfig } from "./config";
+import { handlePaymentWebhook } from "./webhooks/payments";
 
 validateRuntimeConfig();
 
@@ -13,6 +14,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
+
+app.post(
+  "/api/payments/webhooks/stripe/:businessSlug",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  (request, response) => handlePaymentWebhook("stripe", request.params.businessSlug, request, response),
+);
+app.post(
+  "/api/payments/webhooks/mercadopago/:businessSlug",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  (request, response) => handlePaymentWebhook("mercadopago", request.params.businessSlug, request, response),
+);
 
 app.use(express.json({ limit: "1mb" }));
 app.use(
