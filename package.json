@@ -15,7 +15,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "neon:smoke": "tsx scripts/neon-smoke.ts",
-    "seed:core": "tsx scripts/seed-core.ts"
+    "seed:core": "tsx scripts/seed-core.ts",
+    "seed:events": "tsx scripts/seed-events.ts",
+    "publish:demo-event": "tsx scripts/publish-demo-event.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

@@ -24,7 +24,10 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "anc-platform" });
 });
 
-const publicPath = path.resolve(__dirname, "public");
+const publicPath =
+  process.env.NODE_ENV === "production"
+    ? path.resolve(__dirname, "public")
+    : path.resolve(__dirname, "../dist/public");
 app.use(express.static(publicPath));
 app.get("*", (_req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));

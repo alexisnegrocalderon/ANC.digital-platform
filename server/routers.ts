@@ -2,7 +2,12 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { businessModules, businesses, moduleCatalog } from "../drizzle/schema";
 import { MODULE_MANIFESTS, BUSINESS_PRESETS } from "../modules/core/registry";
+import { enableBusinessModules, disableBusinessModules } from "./services/businessModules";
+import { eventsRouter } from "../modules/events/router";
+import type { ModuleKey } from "../shared/module";
 import { businessDatabaseProcedure, databaseProcedure, publicProcedure, router } from "./trpc";
+
+export const moduleKeySchema = z.enum(Object.keys(MODULE_MANIFESTS) as [ModuleKey, ...ModuleKey[]]);
 
 export const appRouter = router({
   system: router({
@@ -38,6 +43,7 @@ export const appRouter = router({
   presets: router({
     list: publicProcedure.query(() => BUSINESS_PRESETS),
   }),
+  events: eventsRouter,
   business: router({
     current: businessDatabaseProcedure.query(async ({ ctx }) => {
       const result = await ctx.db
@@ -66,6 +72,16 @@ export const appRouter = router({
           ),
         );
     }),
+    enableModules: businessDatabaseProcedure
+      .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        return enableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id);
+      }),
+    disableModules: businessDatabaseProcedure
+      .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        return disableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id);
+      }),
   }),
 });
 

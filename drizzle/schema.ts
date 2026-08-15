@@ -230,6 +230,158 @@ export const notificationPreferences = pgTable(
   }),
 );
 
+export const events = pgTable(
+  "events",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    slug: varchar("slug", { length: 120 }).notNull(),
+    name: varchar("name", { length: 220 }).notNull(),
+    description: text("description"),
+    venue: varchar("venue", { length: 220 }),
+    status: varchar("status", { length: 32 }).notNull().default("draft"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    capacity: integer("capacity"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessSlugUnique: uniqueIndex("events_business_slug_unique").on(table.businessId, table.slug),
+    businessStatusIndex: index("events_business_status_idx").on(table.businessId, table.status),
+  }),
+);
+
+export const ticketTypes = pgTable(
+  "ticket_types",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 160 }).notNull(),
+    description: text("description"),
+    priceCents: integer("price_cents").notNull().default(0),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    quantity: integer("quantity"),
+    sold: integer("sold").notNull().default(0),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    eventNameUnique: uniqueIndex("ticket_types_event_name_unique").on(table.eventId, table.name),
+    businessEventIndex: index("ticket_types_business_event_idx").on(table.businessId, table.eventId),
+  }),
+);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    orderNumber: varchar("order_number", { length: 64 }).notNull(),
+    customerEmail: varchar("customer_email", { length: 320 }).notNull(),
+    customerName: varchar("customer_name", { length: 180 }),
+    totalCents: integer("total_cents").notNull().default(0),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    paymentStatus: varchar("payment_status", { length: 32 }).notNull().default("pending"),
+    source: varchar("source", { length: 32 }).notNull().default("web"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessOrderNumberUnique: uniqueIndex("orders_business_order_number_unique").on(
+      table.businessId,
+      table.orderNumber,
+    ),
+    businessCreatedIndex: index("orders_business_created_idx").on(table.businessId, table.createdAt),
+  }),
+);
+
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    ticketTypeId: integer("ticket_type_id")
+      .notNull()
+      .references(() => ticketTypes.id, { onDelete: "restrict" }),
+    quantity: integer("quantity").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    lineTotalCents: integer("line_total_cents").notNull(),
+  },
+  (table) => ({
+    orderIndex: index("order_items_order_idx").on(table.orderId),
+    businessIndex: index("order_items_business_idx").on(table.businessId),
+  }),
+);
+
+export const tickets = pgTable(
+  "tickets",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    ticketTypeId: integer("ticket_type_id")
+      .notNull()
+      .references(() => ticketTypes.id, { onDelete: "restrict" }),
+    code: varchar("code", { length: 96 }).notNull(),
+    attendeeName: varchar("attendee_name", { length: 180 }),
+    status: varchar("status", { length: 32 }).notNull().default("valid"),
+    checkedInAt: timestamp("checked_in_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    codeUnique: uniqueIndex("tickets_code_unique").on(table.code),
+    businessEventIndex: index("tickets_business_event_idx").on(table.businessId, table.eventId),
+  }),
+);
+
+export const accessLogs = pgTable(
+  "access_logs",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    ticketId: integer("ticket_id")
+      .notNull()
+      .references(() => tickets.id, { onDelete: "cascade" }),
+    result: varchar("result", { length: 32 }).notNull(),
+    operatorUserId: integer("operator_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    scannedAt: timestamp("scanned_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    eventScannedIndex: index("access_logs_event_scanned_idx").on(table.businessId, table.eventId, table.scannedAt),
+  }),
+);
+
 export type Business = typeof businesses.$inferSelect;
 export type InsertBusiness = typeof businesses.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -239,3 +391,9 @@ export type BusinessModule = typeof businessModules.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type DomainEvent = typeof domainEvents.$inferSelect;
+export type Event = typeof events.$inferSelect;
+export type TicketType = typeof ticketTypes.$inferSelect;
+export type Order = typeof orders.$inferSelect;
+export type OrderItem = typeof orderItems.$inferSelect;
+export type Ticket = typeof tickets.$inferSelect;
+export type AccessLog = typeof accessLogs.$inferSelect;
