@@ -9,7 +9,9 @@ export type SessionUser = {
 };
 
 export async function createContext({ req, res }: CreateExpressContextOptions) {
-  const businessIdHeader = req.header("x-business-id");
+  const demoContextEnabled =
+    process.env.NODE_ENV !== "production" && process.env.DEV_BUSINESS_CONTEXT_ENABLED === "true";
+  const businessIdHeader = demoContextEnabled ? req.header("x-business-id") : null;
   const businessId = businessIdHeader ? Number(businessIdHeader) : null;
 
   return {
