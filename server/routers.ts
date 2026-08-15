@@ -5,6 +5,8 @@ import { MODULE_MANIFESTS, BUSINESS_PRESETS } from "../modules/core/registry";
 import { enableBusinessModules, disableBusinessModules } from "./services/businessModules";
 import { eventsRouter } from "../modules/events/router";
 import { paymentsRouter } from "../modules/payments/router";
+import { bookingsRouter } from "../modules/bookings/router";
+import { notificationsRouter } from "../modules/notifications/router";
 import type { ModuleKey } from "../shared/module";
 import { businessDatabaseProcedure, databaseProcedure, publicProcedure, router } from "./trpc";
 
@@ -46,6 +48,8 @@ export const appRouter = router({
   }),
   events: eventsRouter,
   payments: paymentsRouter,
+  bookings: bookingsRouter,
+  notifications: notificationsRouter,
   business: router({
     current: businessDatabaseProcedure.query(async ({ ctx }) => {
       const result = await ctx.db

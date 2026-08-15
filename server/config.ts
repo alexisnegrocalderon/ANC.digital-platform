@@ -19,6 +19,10 @@ export function validateRuntimeConfig(env: NodeJS.ProcessEnv = process.env) {
     throw new Error("PAYMENTS_ENCRYPTION_KEY is required in production.");
   }
 
+  if (production && !env.CRON_SECRET?.trim()) {
+    throw new Error("CRON_SECRET is required in production for notification jobs.");
+  }
+
   if (production && env.PAYMENTS_ENCRYPTION_KEY) {
     const encryptionKey = Buffer.from(env.PAYMENTS_ENCRYPTION_KEY, "base64");
     if (encryptionKey.length !== 32) {

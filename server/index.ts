@@ -7,6 +7,9 @@ import { appRouter } from "./routers";
 import { createContext } from "./context";
 import { validateRuntimeConfig } from "./config";
 import { handlePaymentWebhook } from "./webhooks/payments";
+import { handleWhatsAppVerification, handleWhatsAppWebhook } from "./webhooks/whatsapp";
+import { processDueAppointmentNotifications } from "../modules/notifications/service";
+import { requireDb } from "./db";
 
 validateRuntimeConfig();
 
@@ -25,8 +28,30 @@ app.post(
   express.raw({ type: "application/json", limit: "1mb" }),
   (request, response) => handlePaymentWebhook("mercadopago", request.params.businessSlug, request, response),
 );
+app.get(
+  "/api/whatsapp/webhooks/:businessSlug",
+  (request, response) => handleWhatsAppVerification(request.params.businessSlug, request, response),
+);
+app.post(
+  "/api/whatsapp/webhooks/:businessSlug",
+  express.raw({ type: "application/json", limit: "3mb" }),
+  (request, response) => handleWhatsAppWebhook(request.params.businessSlug, request, response),
+);
 
 app.use(express.json({ limit: "1mb" }));
+app.post("/api/internal/jobs/notifications", async (request, response) => {
+  const expectedSecret = process.env.CRON_SECRET?.trim();
+  const providedSecret = request.header("x-cron-secret");
+  if (process.env.NODE_ENV === "production" && (!expectedSecret || providedSecret !== expectedSecret)) {
+    return response.status(401).json({ error: "Unauthorized job request." });
+  }
+  try {
+    const result = await processDueAppointmentNotifications(requireDb(), Number(request.body?.limit ?? 20));
+    return response.status(200).json({ ok: true, processed: result });
+  } catch (error) {
+    return response.status(500).json({ error: error instanceof Error ? error.message : "Notification job failed." });
+  }
+});
 app.use(
   "/api/trpc",
   createExpressMiddleware({

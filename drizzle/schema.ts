@@ -230,6 +230,235 @@ export const notificationPreferences = pgTable(
   }),
 );
 
+export const bookingServices = pgTable(
+  "booking_services",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    slug: varchar("slug", { length: 120 }).notNull(),
+    name: varchar("name", { length: 180 }).notNull(),
+    description: text("description"),
+    durationMinutes: integer("duration_minutes").notNull(),
+    bufferBeforeMinutes: integer("buffer_before_minutes").notNull().default(0),
+    bufferAfterMinutes: integer("buffer_after_minutes").notNull().default(0),
+    priceCents: integer("price_cents").notNull().default(0),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    minNoticeMinutes: integer("min_notice_minutes").notNull().default(60),
+    maxAdvanceDays: integer("max_advance_days").notNull().default(90),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessSlugUnique: uniqueIndex("booking_services_business_slug_unique").on(
+      table.businessId,
+      table.slug,
+    ),
+    businessStatusIndex: index("booking_services_business_status_idx").on(
+      table.businessId,
+      table.status,
+    ),
+  }),
+);
+
+export const bookingStaff = pgTable(
+  "booking_staff",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 180 }).notNull(),
+    email: varchar("email", { length: 320 }),
+    phoneE164: varchar("phone_e164", { length: 32 }),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessStatusIndex: index("booking_staff_business_status_idx").on(
+      table.businessId,
+      table.status,
+    ),
+  }),
+);
+
+export const bookingAvailabilityRules = pgTable(
+  "booking_availability_rules",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    staffId: integer("staff_id").references(() => bookingStaff.id, { onDelete: "cascade" }),
+    weekday: integer("weekday").notNull(),
+    startLocal: varchar("start_local", { length: 5 }).notNull(),
+    endLocal: varchar("end_local", { length: 5 }).notNull(),
+    timezone: varchar("timezone", { length: 64 }).notNull().default("America/Santiago"),
+    slotIntervalMinutes: integer("slot_interval_minutes").notNull().default(30),
+    validFrom: varchar("valid_from", { length: 10 }),
+    validUntil: varchar("valid_until", { length: 10 }),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessWeekdayIndex: index("booking_availability_rules_business_weekday_idx").on(
+      table.businessId,
+      table.weekday,
+      table.status,
+    ),
+    staffIndex: index("booking_availability_rules_staff_idx").on(table.staffId),
+  }),
+);
+
+export const bookingAvailabilityOverrides = pgTable(
+  "booking_availability_overrides",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    staffId: integer("staff_id").references(() => bookingStaff.id, { onDelete: "cascade" }),
+    date: varchar("date", { length: 10 }).notNull(),
+    kind: varchar("kind", { length: 32 }).notNull().default("blocked"),
+    startLocal: varchar("start_local", { length: 5 }),
+    endLocal: varchar("end_local", { length: 5 }),
+    reason: varchar("reason", { length: 240 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessDateIndex: index("booking_availability_overrides_business_date_idx").on(
+      table.businessId,
+      table.date,
+    ),
+    staffDateIndex: index("booking_availability_overrides_staff_date_idx").on(
+      table.staffId,
+      table.date,
+    ),
+  }),
+);
+
+export const appointments = pgTable(
+  "appointments",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    serviceId: integer("service_id")
+      .notNull()
+      .references(() => bookingServices.id, { onDelete: "restrict" }),
+    staffId: integer("staff_id")
+      .notNull()
+      .references(() => bookingStaff.id, { onDelete: "restrict" }),
+    customerName: varchar("customer_name", { length: 180 }).notNull(),
+    customerEmail: varchar("customer_email", { length: 320 }),
+    customerPhoneE164: varchar("customer_phone_e164", { length: 32 }).notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    timezone: varchar("timezone", { length: 64 }).notNull().default("America/Santiago"),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    source: varchar("source", { length: 32 }).notNull().default("web"),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
+    notes: text("notes"),
+    cancellationReason: varchar("cancellation_reason", { length: 240 }),
+    rescheduledFromId: integer("rescheduled_from_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessIdempotencyUnique: uniqueIndex("appointments_business_idempotency_unique").on(
+      table.businessId,
+      table.idempotencyKey,
+    ),
+    businessStartsIndex: index("appointments_business_starts_idx").on(
+      table.businessId,
+      table.startsAt,
+    ),
+    staffStartsIndex: index("appointments_staff_starts_idx").on(table.staffId, table.startsAt),
+    statusIndex: index("appointments_business_status_idx").on(table.businessId, table.status),
+  }),
+);
+
+export const appointmentNotifications = pgTable(
+  "appointment_notifications",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    appointmentId: integer("appointment_id")
+      .notNull()
+      .references(() => appointments.id, { onDelete: "cascade" }),
+    channel: varchar("channel", { length: 32 }).notNull().default("whatsapp"),
+    eventType: varchar("event_type", { length: 96 }).notNull(),
+    recipient: varchar("recipient", { length: 32 }).notNull(),
+    templateName: varchar("template_name", { length: 160 }).notNull(),
+    templateLanguage: varchar("template_language", { length: 16 }).notNull().default("es_CL"),
+    templateParams: jsonb("template_params").$type<Record<string, string>>().notNull().default({}),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("queued"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    providerMessageId: varchar("provider_message_id", { length: 255 }),
+    lastError: text("last_error"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    idempotencyUnique: uniqueIndex("appointment_notifications_business_idempotency_unique").on(
+      table.businessId,
+      table.idempotencyKey,
+    ),
+    dueIndex: index("appointment_notifications_due_idx").on(
+      table.status,
+      table.nextAttemptAt,
+    ),
+    appointmentIndex: index("appointment_notifications_appointment_idx").on(
+      table.businessId,
+      table.appointmentId,
+    ),
+  }),
+);
+
+export const whatsappAccounts = pgTable(
+  "whatsapp_accounts",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    wabaId: varchar("waba_id", { length: 128 }).notNull(),
+    phoneNumberId: varchar("phone_number_id", { length: 128 }).notNull(),
+    displayPhoneNumber: varchar("display_phone_number", { length: 32 }),
+    encryptedAccessToken: text("encrypted_access_token").notNull(),
+    encryptedAppSecret: text("encrypted_app_secret").notNull(),
+    encryptedVerifyToken: text("encrypted_verify_token").notNull(),
+    defaultLanguage: varchar("default_language", { length: 16 }).notNull().default("es_CL"),
+    templates: jsonb("templates").$type<Record<string, string>>().notNull().default({}),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessPhoneUnique: uniqueIndex("whatsapp_accounts_business_phone_unique").on(
+      table.businessId,
+      table.phoneNumberId,
+    ),
+    businessStatusIndex: index("whatsapp_accounts_business_status_idx").on(
+      table.businessId,
+      table.status,
+    ),
+  }),
+);
+
 export const events = pgTable(
   "events",
   {
@@ -498,6 +727,13 @@ export type SiteSettings = typeof siteSettings.$inferSelect;
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type DomainEvent = typeof domainEvents.$inferSelect;
 export type Event = typeof events.$inferSelect;
+export type BookingService = typeof bookingServices.$inferSelect;
+export type BookingStaff = typeof bookingStaff.$inferSelect;
+export type BookingAvailabilityRule = typeof bookingAvailabilityRules.$inferSelect;
+export type BookingAvailabilityOverride = typeof bookingAvailabilityOverrides.$inferSelect;
+export type Appointment = typeof appointments.$inferSelect;
+export type AppointmentNotification = typeof appointmentNotifications.$inferSelect;
+export type WhatsappAccount = typeof whatsappAccounts.$inferSelect;
 export type TicketType = typeof ticketTypes.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type PaymentProviderAccount = typeof paymentProviderAccounts.$inferSelect;

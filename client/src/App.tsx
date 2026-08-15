@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowUpRight, Boxes, Database, Layers3, ShieldCheck } from "lucide-react";
 import { trpc } from "./lib/trpc";
 import { EventDemoPanel } from "./components/events/EventDemoPanel";
+import { BookingDemoPanel } from "./components/bookings/BookingDemoPanel";
 
 const presetLabels = ["Eventos", "Restaurante", "Retail", "Salón", "Gimnasio", "Servicios"];
 
@@ -160,6 +161,7 @@ export default function App() {
       </section>
 
       <EventDemoPanel />
+      <BookingDemoPanel />
 
       <footer className="footer">
         <span>ANC Platform / owned digital infrastructure</span>
