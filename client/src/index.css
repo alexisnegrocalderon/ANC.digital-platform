@@ -338,6 +338,27 @@ h2 {
   max-width: 440px;
 }
 
+.business-banner {
+  background: #d8d7d1;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 24px;
+}
+
+.business-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.business-banner strong {
+  color: var(--ink);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem;
+}
+
 .module-layout {
   display: grid;
   gap: 1px;
@@ -550,6 +571,14 @@ h2 {
 
   .status-strip strong {
     font-size: 0.9rem;
+  }
+
+  .business-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .business-banner > div {
+    border-bottom: 1px solid #c1bfb8;
   }
 
   .section-heading {

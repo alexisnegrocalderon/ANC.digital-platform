@@ -8,6 +8,8 @@ export default function App() {
   const [selectedPreset, setSelectedPreset] = useState("Eventos");
   const health = trpc.system.health.useQuery(undefined, { retry: false });
   const modules = trpc.modules.list.useQuery(undefined, { retry: false });
+  const business = trpc.business.current.useQuery(undefined, { retry: false });
+  const enabledModules = trpc.business.enabledModules.useQuery(undefined, { retry: false });
 
   return (
     <main className="app-shell">
@@ -72,7 +74,7 @@ export default function App() {
       <section id="architecture" className="status-strip">
         <div>
           <span className="metric-label">DATABASE</span>
-          <strong>{health.data?.database.configured ? "Neon conectado" : "Neon por configurar"}</strong>
+          <strong>{business.data?.name ?? (health.data?.database.configured ? "Neon conectado" : "Neon por configurar")}</strong>
         </div>
         <div>
           <span className="metric-label">RUNTIME</span>
@@ -97,6 +99,20 @@ export default function App() {
           <p>
             Los módulos se activan según el negocio. La aplicación central, los permisos y los datos permanecen compartidos.
           </p>
+        </div>
+        <div className="business-banner">
+          <div>
+            <span className="metric-label">BUSINESS CONTEXT</span>
+            <strong>{business.data?.slug ?? "anc-demo"}</strong>
+          </div>
+          <div>
+            <span className="metric-label">ACTIVE MODULES</span>
+            <strong>{enabledModules.data?.length ?? 0} / 20</strong>
+          </div>
+          <div>
+            <span className="metric-label">PRESET</span>
+            <strong>Events / configured</strong>
+          </div>
         </div>
         <div className="module-layout">
           <aside className="preset-panel">
