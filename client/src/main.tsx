@@ -11,6 +11,8 @@ const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: "/api/trpc",
+      // Temporary demo context. The authenticated membership context replaces this in the next core slice.
+      headers: () => ({ "x-business-id": "1" }),
     }),
   ],
 });
