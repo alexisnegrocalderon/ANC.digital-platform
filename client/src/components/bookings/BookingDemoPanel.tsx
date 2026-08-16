@@ -17,8 +17,8 @@ export function BookingDemoPanel() {
   const [phone, setPhone] = useState("+56 9 ");
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ id: number; startsAt: string } | null>(null);
-  const services = trpc.bookings.listServices.useQuery(undefined, { retry: false });
-  const staff = trpc.bookings.listStaff.useQuery(undefined, { retry: false });
+  const services = trpc.reservations.listServices.useQuery(undefined, { retry: false });
+  const staff = trpc.reservations.listStaff.useQuery(undefined, { retry: false });
   const service = services.data?.[0];
   const professional = staff.data?.[0];
   const dateWindow = useMemo(() => {
@@ -26,11 +26,11 @@ export function BookingDemoPanel() {
     const to = new Date(Date.now() + 10 * 86_400_000);
     return { from: from.toISOString(), to: to.toISOString() };
   }, []);
-  const availability = trpc.bookings.getAvailability.useQuery(
+  const availability = trpc.reservations.getAvailability.useQuery(
     { serviceId: service?.id ?? 0, staffId: professional?.id, ...dateWindow },
     { enabled: Boolean(service?.id && professional?.id), retry: false },
   );
-  const appointment = trpc.bookings.createAppointment.useMutation({
+  const appointment = trpc.reservations.createAppointment.useMutation({
     onSuccess: (result) => {
       setSuccess({ id: result.appointment.id, startsAt: result.appointment.startsAt.toString() });
       setSelectedSlot(null);

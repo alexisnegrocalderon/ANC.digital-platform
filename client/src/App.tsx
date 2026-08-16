@@ -3,6 +3,7 @@ import { ArrowUpRight, Boxes, Database, Layers3, ShieldCheck } from "lucide-reac
 import { trpc } from "./lib/trpc";
 import { EventDemoPanel } from "./components/events/EventDemoPanel";
 import { BookingDemoPanel } from "./components/bookings/BookingDemoPanel";
+import { ModuleAdminPanel } from "./components/admin/ModuleAdminPanel";
 
 const presetLabels = ["Eventos", "Restaurante", "Retail", "Salón", "Gimnasio", "Servicios"];
 
@@ -162,6 +163,7 @@ export default function App() {
 
       <EventDemoPanel />
       <BookingDemoPanel />
+      <ModuleAdminPanel />
 
       <footer className="footer">
         <span>ANC Platform / owned digital infrastructure</span>

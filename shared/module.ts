@@ -20,6 +20,28 @@ export type ModuleKey =
   | "reporting"
   | "automations";
 
+export type ModuleCategory =
+  | "offer"
+  | "commerce"
+  | "customer"
+  | "operations"
+  | "intelligence";
+
+export type ModuleMaturity =
+  | "implemented"
+  | "implemented-hardening"
+  | "scaffolded"
+  | "contract-ready"
+  | "planned";
+
+export type ModuleCapability =
+  | "public"
+  | "admin"
+  | "jobs"
+  | "webhooks"
+  | "storage"
+  | "external_api";
+
 export type ModulePermission = {
   key: string;
   label: string;
@@ -38,7 +60,13 @@ export type ModuleManifest = {
   version: string;
   displayName: string;
   description: string;
+  category: ModuleCategory;
   dependencies: ModuleKey[];
+  skillKey: string;
+  maturity: ModuleMaturity;
+  requiresSetup: boolean;
+  setupChecklist: string[];
+  capabilities: ModuleCapability[];
   permissions: ModulePermission[];
   navigation: ModuleNavigationItem[];
   defaultSettings: Record<string, unknown>;

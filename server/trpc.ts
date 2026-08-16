@@ -38,6 +38,24 @@ export const databaseProcedure = t.procedure.use(({ ctx, next }) => {
   });
 });
 
+export const adminDatabaseProcedure = databaseProcedure.use(({ ctx, next }) => {
+  // Development can exercise the admin shell with the demo business context.
+  // Production remains fail-closed until auth/memberships provide a real role.
+  if (process.env.NODE_ENV === "production" && !ctx.user) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "An authenticated administrative session is required for this operation.",
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      db: ctx.db,
+    },
+  });
+});
+
 export const businessDatabaseProcedure = businessProcedure.use(({ ctx, next }) => {
   if (!ctx.db) {
     throw new TRPCError({

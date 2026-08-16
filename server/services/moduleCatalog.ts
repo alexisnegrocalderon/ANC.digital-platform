@@ -11,11 +11,18 @@ export async function syncModuleCatalog() {
     description: module.description,
     version: module.version,
     active: true,
-    metadata: {
-      dependencies: module.dependencies,
-      verticals: module.verticals,
-      permissions: module.permissions,
-    },
+          metadata: {
+        category: module.category,
+        dependencies: module.dependencies,
+        skillKey: module.skillKey,
+        maturity: module.maturity,
+        requiresSetup: module.requiresSetup,
+        setupChecklist: module.setupChecklist,
+        capabilities: module.capabilities,
+        verticals: module.verticals,
+        permissions: module.permissions,
+      },
+
   }));
 
   await db

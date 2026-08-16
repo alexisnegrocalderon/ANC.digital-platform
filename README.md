@@ -15,6 +15,8 @@
 | Vertical Eventos | Eventos, entradas, pedidos, tickets, checkout demo y validación de acceso. |
 | Autenticación productiva | Pendiente; el contexto por header solo funciona en desarrollo con `DEV_BUSINESS_CONTEXT_ENABLED=true`. |
 | Pagos | Stripe Checkout Sessions y MercadoPago Checkout Pro con webhooks firmados, idempotencia local y estados persistidos. |
+| Skills modulares | 20 skills `modulo-*` creadas y validadas; `modulo-whatsapp` se conserva como skill transversal. |
+| Admin de módulos | Catálogo por negocio, grupos, madurez, dependencias, setup, plan de activación, health y auditoría. |
 
 ## Puesta en marcha local
 
@@ -46,12 +48,15 @@ Durante la etapa local, el frontend consulta el negocio demo `anc-demo` mediante
 | `pnpm run seed:core` | Sincronizar el catálogo de 20 módulos y crear `anc-demo`. |
 | `pnpm run seed:events` | Crear el evento y ticket demo de la vertical Eventos. |
 | `pnpm run publish:demo-event` | Publicar el evento demo de forma idempotente. |
+| `pnpm run modules:catalog-validate` | Comprobar que el documento y el registry contienen los mismos 20 módulos. |
 
 ## Arquitectura
 
 El core vive en `server/`, `shared/`, `drizzle/` y `modules/core/`. El contrato de módulo está definido en `shared/module.ts`; el registro central y los presets están en `modules/core/registry.ts`; la resolución de dependencias está en `modules/core/activation.ts`; y la persistencia de activaciones utiliza `business_modules`.
 
 Cada módulo nuevo debe mantener sus servicios, router, esquema específico, pantallas y pruebas en su propio directorio. Las tablas de negocio deben incluir `businessId`, los importes deben usar enteros y moneda explícita, y las operaciones críticas deben generar auditoría o eventos de dominio. El core no debe conocer reglas particulares de eventos, restaurantes, gimnasios o servicios profesionales.
+
+Cada módulo también tiene una skill reutilizable en `/home/ubuntu/skills/modulo-*/SKILL.md`. La skill guía la implementación; el runtime se acopla mediante `ModuleManifest`, `modules/core/registry.ts`, `business_modules` y los routers del módulo. El panel admin está integrado en `ModuleAdminPanel` y usa `admin.modules.*`, `admin.businessModules.*` y `admin.audit.moduleChanges`.
 
 ## Módulos declarados
 

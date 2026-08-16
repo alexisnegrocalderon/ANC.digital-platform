@@ -23,6 +23,7 @@
     "bookings:schema-smoke": "tsx scripts/bookings-schema-smoke.ts",
     "bookings:smoke": "tsx scripts/bookings-smoke.ts",
     "bookings:concurrency-smoke": "tsx scripts/bookings-concurrency-smoke.ts",
+    "modules:catalog-validate": "tsx scripts/validate-module-catalog.ts",
     "publish:demo-event": "tsx scripts/publish-demo-event.ts"
   },
   "dependencies": {

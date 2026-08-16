@@ -5,8 +5,9 @@ import { MODULE_MANIFESTS, BUSINESS_PRESETS } from "../modules/core/registry";
 import { enableBusinessModules, disableBusinessModules } from "./services/businessModules";
 import { eventsRouter } from "../modules/events/router";
 import { paymentsRouter } from "../modules/payments/router";
-import { bookingsRouter } from "../modules/bookings/router";
+import { reservationsRouter } from "../modules/reservations/router";
 import { notificationsRouter } from "../modules/notifications/router";
+import { adminRouter } from "./adminRouter";
 import type { ModuleKey } from "../shared/module";
 import { businessDatabaseProcedure, databaseProcedure, publicProcedure, router } from "./trpc";
 
@@ -24,12 +25,31 @@ export const appRouter = router({
   modules: router({
     list: publicProcedure.query(() =>
       Object.values(MODULE_MANIFESTS).map(
-        ({ key, version, displayName, description, dependencies, verticals }) => ({
+        ({
           key,
           version,
           displayName,
           description,
+          category,
           dependencies,
+          skillKey,
+          maturity,
+          requiresSetup,
+          setupChecklist,
+          capabilities,
+          verticals,
+        }) => ({
+          key,
+          version,
+          displayName,
+          description,
+          category,
+          dependencies,
+          skillKey,
+          maturity,
+          requiresSetup,
+          setupChecklist,
+          capabilities,
           verticals,
         }),
       ),
@@ -48,8 +68,9 @@ export const appRouter = router({
   }),
   events: eventsRouter,
   payments: paymentsRouter,
-  bookings: bookingsRouter,
+  reservations: reservationsRouter,
   notifications: notificationsRouter,
+  admin: adminRouter,
   business: router({
     current: businessDatabaseProcedure.query(async ({ ctx }) => {
       const result = await ctx.db

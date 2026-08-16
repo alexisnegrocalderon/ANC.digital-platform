@@ -31,6 +31,16 @@ describe("module registry", () => {
     }
   });
 
+  it("has complete metadata for the admin catalog", () => {
+    for (const manifest of Object.values(MODULE_MANIFESTS)) {
+      expect(manifest.skillKey).toMatch(/^modulo-/);
+      expect(["offer", "commerce", "customer", "operations", "intelligence"]).toContain(manifest.category);
+      expect(["implemented", "implemented-hardening", "scaffolded", "contract-ready", "planned"]).toContain(manifest.maturity);
+      expect(manifest.setupChecklist.length).toBeGreaterThan(0);
+      expect(manifest.capabilities.length).toBeGreaterThan(0);
+    }
+  });
+
   it("provides reusable vertical presets", () => {
     expect(BUSINESS_PRESETS.map((preset) => preset.key)).toEqual([
       "events",
