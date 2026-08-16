@@ -35,6 +35,15 @@ export function validateRuntimeConfig(env: NodeJS.ProcessEnv = process.env) {
   if (production && !env.VITE_OAUTH_PORTAL_URL?.startsWith("https://")) {
     throw new Error("VITE_OAUTH_PORTAL_URL must be an HTTPS URL in production.");
   }
+  if (production && !env.CONTROL_PLANE_PUBLIC_KEY?.includes("PUBLIC KEY")) {
+    throw new Error("CONTROL_PLANE_PUBLIC_KEY is required in production for control-plane JWT verification.");
+  }
+  if (production && !env.CONTROL_PLANE_ISSUER?.trim()) {
+    throw new Error("CONTROL_PLANE_ISSUER is required in production.");
+  }
+  if (production && !env.CONTROL_PLANE_AUDIENCE?.trim()) {
+    throw new Error("CONTROL_PLANE_AUDIENCE is required in production.");
+  }
 
   if (production && env.PAYMENTS_ENCRYPTION_KEY) {
     const encryptionKey = Buffer.from(env.PAYMENTS_ENCRYPTION_KEY, "base64");

@@ -11,6 +11,7 @@ import { handleWhatsAppVerification, handleWhatsAppWebhook } from "./webhooks/wh
 import { processDueAppointmentNotifications } from "../modules/notifications/service";
 import { requireDb } from "./db";
 import { registerAuthRoutes } from "./auth";
+import { registerControlPlaneRoutes } from "./controlPlaneRouter";
 
 validateRuntimeConfig();
 
@@ -42,6 +43,7 @@ app.post(
 );
 
 app.use(express.json({ limit: "1mb" }));
+registerControlPlaneRoutes(app);
 app.post("/api/internal/jobs/notifications", async (request, response) => {
   const expectedSecret = process.env.CRON_SECRET?.trim();
   const providedSecret = request.header("x-cron-secret");

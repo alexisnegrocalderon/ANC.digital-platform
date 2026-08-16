@@ -50,6 +50,13 @@
       "when": 1786857653948,
       "tag": "0006_groovy_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786859840641,
+      "tag": "0007_zippy_nekra",
+      "breakpoints": true
     }
   ]
 }

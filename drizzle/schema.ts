@@ -19,6 +19,9 @@ export const businesses = pgTable(
     name: varchar("name", { length: 180 }).notNull(),
     legalName: varchar("legal_name", { length: 240 }),
     status: varchar("status", { length: 32 }).notNull().default("active"),
+    environment: varchar("environment", { length: 32 }).notNull().default("development"),
+    externalProjectId: varchar("external_project_id", { length: 180 }),
+    publicUrl: varchar("public_url", { length: 500 }),
     timezone: varchar("timezone", { length: 64 }).notNull().default("America/Santiago"),
     currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
     locale: varchar("locale", { length: 16 }).notNull().default("es-CL"),
@@ -27,6 +30,10 @@ export const businesses = pgTable(
   },
   (table) => ({
     slugUnique: uniqueIndex("businesses_slug_unique").on(table.slug),
+    externalProjectEnvironmentUnique: uniqueIndex("businesses_external_project_environment_unique").on(
+      table.externalProjectId,
+      table.environment,
+    ),
     statusIndex: index("businesses_status_idx").on(table.status),
   }),
 );
@@ -139,6 +146,29 @@ export const moduleFlagOperations = pgTable(
       table.businessId,
       table.createdAt,
     ),
+  }),
+);
+
+export const controlPlaneIdempotency = pgTable(
+  "control_plane_idempotency",
+  {
+    id: serial("id").primaryKey(),
+    clientId: varchar("client_id", { length: 120 }).notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 180 }).notNull(),
+    requestHash: varchar("request_hash", { length: 64 }).notNull(),
+    operation: varchar("operation", { length: 120 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("processing"),
+    response: jsonb("response").$type<Record<string, unknown>>().notNull().default({}),
+    requestId: varchar("request_id", { length: 80 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    clientKeyUnique: uniqueIndex("control_plane_idempotency_client_key_unique").on(
+      table.clientId,
+      table.idempotencyKey,
+    ),
+    statusIndex: index("control_plane_idempotency_status_idx").on(table.status),
   }),
 );
 
