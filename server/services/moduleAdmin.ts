@@ -5,7 +5,7 @@ import {
   businesses,
   moduleCatalog,
 } from "../../drizzle/schema";
-import { MODULE_MANIFESTS } from "../../modules/core/registry";
+import { BUSINESS_PRESETS, MODULE_MANIFESTS } from "../../modules/core/registry";
 import {
   ModuleActivationError,
   resolveActivationPlan,
@@ -105,11 +105,25 @@ export function getAdminActivationPlan(moduleKeys: ModuleKey[]) {
   return resolveActivationPlan(moduleKeys);
 }
 
+export async function applyAdminPreset(
+  db: any,
+  businessId: number,
+  presetKey: string,
+  actorUserId?: number | null,
+  idempotencyKey?: string | null,
+) {
+  const preset = BUSINESS_PRESETS.find((candidate) => candidate.key === presetKey);
+  if (!preset) throw new ModuleActivationError(`Unknown business preset: ${presetKey}.`);
+  const result = await enableAdminModules(db, businessId, preset.moduleKeys, actorUserId, idempotencyKey);
+  return { preset, result };
+}
+
 export async function enableAdminModules(
   db: any,
   businessId: number,
   moduleKeys: ModuleKey[],
   actorUserId?: number | null,
+  idempotencyKey?: string | null,
 ) {
   const plan = resolveActivationPlan(moduleKeys);
   const blocked = plan.ordered.filter((key) => MATURITY_BLOCKED.has(MODULE_MANIFESTS[key].maturity));
@@ -118,7 +132,7 @@ export async function enableAdminModules(
       `Modules are not activatable until their runtime is implemented: ${blocked.join(", ")}.`,
     );
   }
-  return enableBusinessModules(db, businessId, plan.ordered, actorUserId);
+  return enableBusinessModules(db, businessId, plan.ordered, actorUserId, idempotencyKey);
 }
 
 export async function disableAdminModules(
@@ -126,6 +140,7 @@ export async function disableAdminModules(
   businessId: number,
   moduleKeys: ModuleKey[],
   actorUserId?: number | null,
+  idempotencyKey?: string | null,
 ) {
   const catalog = await getAdminModuleCatalog(db, businessId);
   const active = new Set(catalog.filter((module) => module.enabled).map((module) => module.key));
@@ -141,7 +156,7 @@ export async function disableAdminModules(
       `Disable dependent modules first: ${[...new Set(dependents)].join(", ")}.`,
     );
   }
-  return disableBusinessModules(db, businessId, moduleKeys, actorUserId);
+  return disableBusinessModules(db, businessId, moduleKeys, actorUserId, idempotencyKey);
 }
 
 export async function updateAdminModuleSettings(

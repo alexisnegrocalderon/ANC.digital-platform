@@ -115,14 +115,14 @@ export const appRouter = router({
         );
     }),
     enableModules: businessAdminProcedure
-      .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1) }))
+      .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1), idempotencyKey: z.string().min(8).max(160).optional() }))
       .mutation(async ({ ctx, input }) => {
-        return enableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id);
+        return enableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id, input.idempotencyKey);
       }),
     disableModules: businessAdminProcedure
-      .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1) }))
+      .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1), idempotencyKey: z.string().min(8).max(160).optional() }))
       .mutation(async ({ ctx, input }) => {
-        return disableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id);
+        return disableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id, input.idempotencyKey);
       }),
   }),
 });

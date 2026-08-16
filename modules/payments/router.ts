@@ -9,7 +9,7 @@ import {
   ticketTypes,
 } from "../../drizzle/schema";
 import { PAYMENT_PROVIDERS, type PaymentProvider } from "../../shared/payment";
-import { businessDatabaseProcedure, router } from "../../server/trpc";
+import { moduleEnabledProcedure, router } from "../../server/trpc";
 import {
   createOrReusePaymentAttempt,
   resolveProviderCredentials,
@@ -21,7 +21,7 @@ import { getPaymentAdapter } from "./providers";
 const providerSchema = z.enum(PAYMENT_PROVIDERS);
 
 export const paymentsRouter = router({
-  createCheckout: businessDatabaseProcedure
+  createCheckout: moduleEnabledProcedure("payments")
     .input(
       z.object({
         provider: providerSchema,
@@ -127,7 +127,7 @@ export const paymentsRouter = router({
       };
     }),
 
-  getStatus: businessDatabaseProcedure
+  getStatus: moduleEnabledProcedure("payments")
     .input(z.object({ orderId: z.number().int().positive(), provider: providerSchema.optional() }))
     .query(async ({ ctx, input }) => {
       const conditions = [eq(paymentAttempts.businessId, ctx.businessId), eq(paymentAttempts.orderId, input.orderId)];
@@ -139,7 +139,7 @@ export const paymentsRouter = router({
         .orderBy(paymentAttempts.createdAt);
     }),
 
-  configureProvider: businessDatabaseProcedure
+  configureProvider: moduleEnabledProcedure("payments")
     .input(
       z.object({
         provider: providerSchema,

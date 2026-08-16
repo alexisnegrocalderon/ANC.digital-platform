@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { businessDatabaseProcedure, router } from "../../server/trpc";
+import { moduleEnabledProcedure, router } from "../../server/trpc";
 import {
   createEvent,
   createOrder,
@@ -12,16 +12,16 @@ import {
 } from "./service";
 
 export const eventsRouter = router({
-  listPublished: businessDatabaseProcedure.query(({ ctx }) =>
+  listPublished: moduleEnabledProcedure("ticketing").query(({ ctx }) =>
     listPublishedEvents(ctx.db, ctx.businessId),
   ),
-  getBySlug: businessDatabaseProcedure
+  getBySlug: moduleEnabledProcedure("ticketing")
     .input(z.object({ slug: z.string().min(1).max(120) }))
     .query(({ ctx, input }) => getEventBySlug(ctx.db, ctx.businessId, input.slug)),
-  getTicketTypes: businessDatabaseProcedure
+  getTicketTypes: moduleEnabledProcedure("ticketing")
     .input(z.object({ eventId: z.number().int().positive() }))
     .query(({ ctx, input }) => getEventTicketTypes(ctx.db, ctx.businessId, input.eventId)),
-  create: businessDatabaseProcedure
+  create: moduleEnabledProcedure("ticketing")
     .input(
       z.object({
         slug: z.string().min(2).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
@@ -34,10 +34,10 @@ export const eventsRouter = router({
       }),
     )
     .mutation(({ ctx, input }) => createEvent(ctx.db, ctx.businessId, input)),
-  publish: businessDatabaseProcedure
+  publish: moduleEnabledProcedure("ticketing")
     .input(z.object({ eventId: z.number().int().positive() }))
     .mutation(({ ctx, input }) => publishEvent(ctx.db, ctx.businessId, input.eventId)),
-  createTicketType: businessDatabaseProcedure
+  createTicketType: moduleEnabledProcedure("ticketing")
     .input(
       z.object({
         eventId: z.number().int().positive(),
@@ -49,7 +49,7 @@ export const eventsRouter = router({
       }),
     )
     .mutation(({ ctx, input }) => createTicketType(ctx.db, ctx.businessId, input)),
-  createOrder: businessDatabaseProcedure
+  createOrder: moduleEnabledProcedure("ticketing")
     .input(
       z.object({
         eventId: z.number().int().positive(),
@@ -60,7 +60,7 @@ export const eventsRouter = router({
       }),
     )
     .mutation(({ ctx, input }) => createOrder(ctx.db, ctx.businessId, input)),
-  validateTicket: businessDatabaseProcedure
+  validateTicket: moduleEnabledProcedure("ticketing")
     .input(
       z.object({
         eventId: z.number().int().positive(),

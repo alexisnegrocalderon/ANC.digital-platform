@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { businessDatabaseProcedure, router } from "../../server/trpc";
+import { moduleEnabledProcedure, router } from "../../server/trpc";
 import { upsertWhatsAppAccount } from "./whatsapp";
 import { processDueAppointmentNotifications } from "./service";
 
 export const notificationsRouter = router({
-  configureWhatsApp: businessDatabaseProcedure
+  configureWhatsApp: moduleEnabledProcedure("notifications")
     .input(
       z.object({
         wabaId: z.string().min(1).max(128),
@@ -24,7 +24,7 @@ export const notificationsRouter = router({
       return upsertWhatsAppAccount(ctx.db, ctx.businessId, input);
     }),
 
-  processDue: businessDatabaseProcedure
+  processDue: moduleEnabledProcedure("notifications")
     .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }))
     .mutation(async ({ ctx, input }) => {
       if (process.env.NODE_ENV === "production" && !ctx.user) {

@@ -17,6 +17,7 @@
 | Pagos | Stripe Checkout Sessions y MercadoPago Checkout Pro con webhooks firmados, idempotencia local y estados persistidos. |
 | Skills modulares | 20 skills `modulo-*` creadas y validadas; `modulo-whatsapp` se conserva como skill transversal. |
 | Admin de módulos | Catálogo por negocio, grupos, madurez, dependencias, setup, plan de activación, health y auditoría. |
+| Feature flags | Activación/desactivación por negocio, presets de rubro, idempotencia, auditoría y guards runtime en módulos implementados. |
 
 ## Puesta en marcha local
 
@@ -56,13 +57,13 @@ El core vive en `server/`, `shared/`, `drizzle/` y `modules/core/`. El contrato 
 
 Cada módulo nuevo debe mantener sus servicios, router, esquema específico, pantallas y pruebas en su propio directorio. Las tablas de negocio deben incluir `businessId`, los importes deben usar enteros y moneda explícita, y las operaciones críticas deben generar auditoría o eventos de dominio. El core no debe conocer reglas particulares de eventos, restaurantes, gimnasios o servicios profesionales.
 
-Cada módulo también tiene una skill reutilizable en `/home/ubuntu/skills/modulo-*/SKILL.md`. La skill guía la implementación; el runtime se acopla mediante `ModuleManifest`, `modules/core/registry.ts`, `business_modules` y los routers del módulo. El panel admin está integrado en `ModuleAdminPanel` y `MembershipAdminPanel`, y usa `admin.modules.*`, `admin.businessModules.*`, `admin.memberships.*` y `admin.audit.moduleChanges`. La autenticación usa `server/auth.ts`, `/api/auth/login`, `/api/oauth/callback`, `auth.me` y `auth.logout`.
+Cada módulo también tiene una skill reutilizable en `/home/ubuntu/skills/modulo-*/SKILL.md`. La skill guía la implementación; el runtime se acopla mediante `ModuleManifest`, `modules/core/registry.ts`, `business_modules` y los routers del módulo. El panel admin está integrado en `ModuleAdminPanel` y `MembershipAdminPanel`, y usa `admin.modules.*`, `admin.businessModules.*`, `admin.presets.applyPreset`, `admin.memberships.*` y `admin.audit.moduleChanges`. La autenticación usa `server/auth.ts`, `/api/auth/login`, `/api/oauth/callback`, `auth.me` y `auth.logout`. Las activaciones guardan una idempotency key en `module_flag_operations`; los routers de Eventos, Pagos, Reservas y Notificaciones exigen que su feature flag esté activo.
 
 ## Módulos declarados
 
 El registro inicial contiene `catalogue`, `pricing`, `orders`, `payments`, `pos`, `inventory`, `billing`, `crm`, `campaigns`, `loyalty`, `notifications`, `reviews`, `reservations`, `access`, `ticketing`, `wallet`, `delivery`, `branches`, `reporting` y `automations`. No todos tienen todavía tablas y pantallas específicas; el registro ya permite modelar sus dependencias y habilitarlos como capacidad de negocio, mientras la implementación se completa por prioridad comercial.
 
-Los presets disponibles son `events`, `restaurant`, `salon`, `retail`, `gym` y `services`. Un preset se resuelve a un plan de activación que incluye dependencias antes de insertar `business_modules`. La activación no elimina historial cuando un módulo se desactiva.
+Los presets disponibles son `events`, `restaurant`, `salon`, `retail`, `gym` y `services`. Desde `admin.presets.applyPreset` se puede aplicar un preset con una sola acción; el backend calcula dependencias, bloquea módulos no implementados, escribe flags y auditoría idempotente y actualiza el catálogo del negocio. Una desactivación no elimina historial ni datos, y rechaza apagar dependencias mientras existan módulos dependientes activos.
 
 ## Neon y mantenimiento
 

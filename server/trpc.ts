@@ -1,5 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { AppContext } from "./context";
+import { and, eq } from "drizzle-orm";
+import { businessModules } from "../drizzle/schema";
+import type { ModuleKey } from "../shared/module";
 import {
   BUSINESS_ADMIN_ROLES,
   BUSINESS_MANAGER_ROLES,
@@ -82,6 +85,32 @@ export const businessManagerProcedure = businessDatabaseProcedure.use(({ ctx, ne
   }
   return next({ ctx: { ...ctx, businessRole: ctx.businessRole } });
 });
+
+export async function requireModuleEnabled(db: any, businessId: number, moduleKey: ModuleKey) {
+  const [flag] = await db
+    .select({ enabled: businessModules.enabled })
+    .from(businessModules)
+    .where(
+      and(
+        eq(businessModules.businessId, businessId),
+        eq(businessModules.moduleKey, moduleKey),
+      ),
+    )
+    .limit(1);
+
+  if (!flag?.enabled) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: `Module ${moduleKey} is not enabled for this business.`,
+    });
+  }
+}
+
+export const moduleEnabledProcedure = (moduleKey: ModuleKey) =>
+  businessDatabaseProcedure.use(async ({ ctx, next }) => {
+    await requireModuleEnabled(ctx.db, ctx.businessId, moduleKey);
+    return next({ ctx: { ...ctx, businessId: ctx.businessId } });
+  });
 
 export const businessAdminProcedure = businessDatabaseProcedure.use(({ ctx, next }) => {
   if (

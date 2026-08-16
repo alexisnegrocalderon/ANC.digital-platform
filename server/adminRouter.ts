@@ -1,8 +1,9 @@
 import { z } from "zod";
 import type { ModuleKey } from "../shared/module";
 import { BUSINESS_ROLE_KEYS } from "../shared/auth";
-import { MODULE_MANIFESTS } from "../modules/core/registry";
+import { BUSINESS_PRESETS, MODULE_MANIFESTS } from "../modules/core/registry";
 import {
+  applyAdminPreset,
   getAdminActivationPlan,
   getAdminModuleCatalog,
   getModuleAdminHealth,
@@ -16,12 +17,21 @@ import { listBusinessMemberships, revokeBusinessMembership, setBusinessMembershi
 import { adminDatabaseProcedure, router } from "./trpc";
 
 const businessRoleSchema = z.enum([...BUSINESS_ROLE_KEYS] as [string, ...string[]]);
+const presetKeySchema = z.enum(BUSINESS_PRESETS.map((preset) => preset.key) as [string, ...string[]]);
 const moduleKeySchema = z.enum(Object.keys(MODULE_MANIFESTS) as [ModuleKey, ...ModuleKey[]]);
 const businessInput = z.object({ businessId: z.number().int().positive() });
 
 export const adminRouter = router({
   businesses: router({
     list: adminDatabaseProcedure.query(({ ctx }) => listBusinessesForAdmin(ctx.db)),
+  }),
+  presets: router({
+    list: adminDatabaseProcedure.query(() => BUSINESS_PRESETS),
+    applyPreset: adminDatabaseProcedure
+      .input(businessInput.extend({ presetKey: presetKeySchema, idempotencyKey: z.string().min(8).max(160).optional() }))
+      .mutation(({ ctx, input }) =>
+        applyAdminPreset(ctx.db, input.businessId, input.presetKey, ctx.user?.id, input.idempotencyKey),
+      ),
   }),
   memberships: router({
     list: adminDatabaseProcedure
@@ -66,14 +76,14 @@ export const adminRouter = router({
       .input(businessInput)
       .query(({ ctx, input }) => getAdminModuleCatalog(ctx.db, input.businessId)),
     enable: adminDatabaseProcedure
-      .input(businessInput.extend({ moduleKeys: z.array(moduleKeySchema).min(1) }))
+      .input(businessInput.extend({ moduleKeys: z.array(moduleKeySchema).min(1), idempotencyKey: z.string().min(8).max(160).optional() }))
       .mutation(({ ctx, input }) =>
-        enableAdminModules(ctx.db, input.businessId, input.moduleKeys as ModuleKey[], ctx.user?.id),
+        enableAdminModules(ctx.db, input.businessId, input.moduleKeys as ModuleKey[], ctx.user?.id, input.idempotencyKey),
       ),
     disable: adminDatabaseProcedure
-      .input(businessInput.extend({ moduleKeys: z.array(moduleKeySchema).min(1) }))
+      .input(businessInput.extend({ moduleKeys: z.array(moduleKeySchema).min(1), idempotencyKey: z.string().min(8).max(160).optional() }))
       .mutation(({ ctx, input }) =>
-        disableAdminModules(ctx.db, input.businessId, input.moduleKeys as ModuleKey[], ctx.user?.id),
+        disableAdminModules(ctx.db, input.businessId, input.moduleKeys as ModuleKey[], ctx.user?.id, input.idempotencyKey),
       ),
     updateSettings: adminDatabaseProcedure
       .input(

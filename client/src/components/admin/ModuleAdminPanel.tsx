@@ -21,8 +21,16 @@ const maturityLabels: Record<string, string> = {
 
 export function ModuleAdminPanel() {
   const [selectedBusinessId, setSelectedBusinessId] = useState(1);
+  const [selectedPresetKey, setSelectedPresetKey] = useState("events");
   const [selectedKeys, setSelectedKeys] = useState<ModuleKey[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("anc-active-business-id", String(selectedBusinessId));
+    }
+  }, [selectedBusinessId]);
   const businesses = trpc.admin.businesses.list.useQuery(undefined, { retry: false });
+  const presets = trpc.admin.presets.list.useQuery(undefined, { retry: false });
   const catalog = trpc.admin.modules.catalog.useQuery({ businessId: selectedBusinessId }, { retry: false });
   const plan = trpc.admin.modules.resolveActivationPlan.useQuery(
     { moduleKeys: selectedKeys },
@@ -56,19 +64,42 @@ export function ModuleAdminPanel() {
     return [...groups.entries()];
   }, [catalog.data]);
 
+  const applyPreset = trpc.admin.presets.applyPreset.useMutation({
+    onSuccess: async (result) => {
+      setSelectedKeys(result.result.resolved);
+      await utils.admin.modules.catalog.invalidate({ businessId: selectedBusinessId });
+    },
+  });
+
   const toggleModule = (key: ModuleKey, enabled: boolean) => {
     setSelectedKeys((current) =>
       enabled ? [...new Set([...current, key])] : current.filter((item) => item !== key),
     );
   };
 
+  const handleApplyPreset = () => {
+    applyPreset.mutate({
+      businessId: selectedBusinessId,
+      presetKey: selectedPresetKey as never,
+      idempotencyKey: crypto.randomUUID(),
+    });
+  };
+
   const handleEnable = () => {
     if (selectedKeys.length === 0) return;
-    enable.mutate({ businessId: selectedBusinessId, moduleKeys: selectedKeys });
+    enable.mutate({
+      businessId: selectedBusinessId,
+      moduleKeys: selectedKeys,
+      idempotencyKey: crypto.randomUUID(),
+    });
   };
 
   const handleDisable = (key: ModuleKey) => {
-    disable.mutate({ businessId: selectedBusinessId, moduleKeys: [key] });
+    disable.mutate({
+      businessId: selectedBusinessId,
+      moduleKeys: [key],
+      idempotencyKey: crypto.randomUUID(),
+    });
   };
 
   return (
@@ -92,6 +123,15 @@ export function ModuleAdminPanel() {
             ))}
           </select>
         </label>
+        <label>
+          Preset inicial
+          <select value={selectedPresetKey} onChange={(event) => setSelectedPresetKey(event.target.value)}>
+            {(presets.data ?? []).map((preset) => <option value={preset.key} key={preset.key}>{preset.displayName}</option>)}
+          </select>
+        </label>
+        <button className="admin-primary-button" type="button" disabled={applyPreset.isPending} onClick={handleApplyPreset}>
+          {applyPreset.isPending ? "Aplicando preset…" : "Aplicar preset"}
+        </button>
         <div className="admin-summary">
           <span><ShieldCheck size={15} /> {selectedKeys.length} seleccionados</span>
           <span><ChevronRight size={15} /> {plan.data?.ordered.length ?? 0} en plan</span>
@@ -101,6 +141,7 @@ export function ModuleAdminPanel() {
         </button>
       </div>
 
+      {applyPreset.error ? <p className="admin-error"><AlertTriangle size={15} /> {applyPreset.error.message}</p> : null}
       {enable.error ? <p className="admin-error"><AlertTriangle size={15} /> {enable.error.message}</p> : null}
       {catalog.error ? <p className="admin-error"><AlertTriangle size={15} /> {catalog.error.message}</p> : null}
 

@@ -115,6 +115,33 @@ export const businessModules = pgTable(
   }),
 );
 
+export const moduleFlagOperations = pgTable(
+  "module_flag_operations",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    actorUserId: integer("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    idempotencyKey: varchar("idempotency_key", { length: 180 }).notNull(),
+    operation: varchar("operation", { length: 32 }).notNull(),
+    requestedModules: jsonb("requested_modules").$type<string[]>().notNull().default([]),
+    resolvedModules: jsonb("resolved_modules").$type<string[]>().notNull().default([]),
+    result: jsonb("result").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessKeyUnique: uniqueIndex("module_flag_operations_business_key_unique").on(
+      table.businessId,
+      table.idempotencyKey,
+    ),
+    businessCreatedIndex: index("module_flag_operations_business_created_idx").on(
+      table.businessId,
+      table.createdAt,
+    ),
+  }),
+);
+
 export const siteSettings = pgTable(
   "site_settings",
   {

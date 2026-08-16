@@ -7,7 +7,7 @@ import {
   bookingServices,
   bookingStaff,
 } from "../../drizzle/schema";
-import { businessDatabaseProcedure, router } from "../../server/trpc";
+import { moduleEnabledProcedure, router } from "../../server/trpc";
 import {
   BookingConflictError,
   BookingValidationError,
@@ -29,21 +29,21 @@ function bookingError(error: unknown): never {
 }
 
 export const bookingsRouter = router({
-  listServices: businessDatabaseProcedure.query(({ ctx }) =>
+  listServices: moduleEnabledProcedure("reservations").query(({ ctx }) =>
     ctx.db
       .select()
       .from(bookingServices)
       .where(and(eq(bookingServices.businessId, ctx.businessId), eq(bookingServices.status, "active"))),
   ),
 
-  listStaff: businessDatabaseProcedure.query(({ ctx }) =>
+  listStaff: moduleEnabledProcedure("reservations").query(({ ctx }) =>
     ctx.db
       .select()
       .from(bookingStaff)
       .where(and(eq(bookingStaff.businessId, ctx.businessId), eq(bookingStaff.status, "active"))),
   ),
 
-  getAvailability: businessDatabaseProcedure
+  getAvailability: moduleEnabledProcedure("reservations")
     .input(
       z.object({
         serviceId: z.number().int().positive(),
@@ -72,7 +72,7 @@ export const bookingsRouter = router({
       }
     }),
 
-  createAppointment: businessDatabaseProcedure
+  createAppointment: moduleEnabledProcedure("reservations")
     .input(
       z.object({
         serviceId: z.number().int().positive(),
@@ -98,7 +98,7 @@ export const bookingsRouter = router({
       }
     }),
 
-  cancelAppointment: businessDatabaseProcedure
+  cancelAppointment: moduleEnabledProcedure("reservations")
     .input(z.object({ appointmentId: z.number().int().positive(), reason: z.string().max(240).optional() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -108,7 +108,7 @@ export const bookingsRouter = router({
       }
     }),
 
-  listAgenda: businessDatabaseProcedure
+  listAgenda: moduleEnabledProcedure("reservations")
     .input(
       z.object({
         from: isoDate,
@@ -128,7 +128,7 @@ export const bookingsRouter = router({
       return ctx.db.select().from(appointments).where(and(...conditions));
     }),
 
-  configureService: businessDatabaseProcedure
+  configureService: moduleEnabledProcedure("reservations")
     .input(
       z.object({
         slug: z.string().regex(/^[a-z0-9-]+$/).max(120),
@@ -167,7 +167,7 @@ export const bookingsRouter = router({
         .returning();
     }),
 
-  configureStaff: businessDatabaseProcedure
+  configureStaff: moduleEnabledProcedure("reservations")
     .input(
       z.object({
         name: z.string().min(2).max(180),
@@ -182,7 +182,7 @@ export const bookingsRouter = router({
       return ctx.db.insert(bookingStaff).values({ businessId: ctx.businessId, ...input }).returning();
     }),
 
-  configureAvailability: businessDatabaseProcedure
+  configureAvailability: moduleEnabledProcedure("reservations")
     .input(
       z.object({
         staffId: z.number().int().positive().optional(),
