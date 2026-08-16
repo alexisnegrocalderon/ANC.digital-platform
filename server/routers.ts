@@ -7,6 +7,11 @@ import { eventsRouter } from "../modules/events/router";
 import { paymentsRouter } from "../modules/payments/router";
 import { reservationsRouter } from "../modules/reservations/router";
 import { notificationsRouter } from "../modules/notifications/router";
+import { catalogueRouter } from "../modules/catalogue/router";
+import { crmRouter } from "../modules/crm/router";
+import { reportingRouter } from "../modules/reporting/router";
+import { accessRouter } from "../modules/access/router";
+import { pricingRouter } from "../modules/pricing/router";
 import { adminRouter } from "./adminRouter";
 import type { ModuleKey } from "../shared/module";
 import { COOKIE_NAME } from "../shared/const";
@@ -85,6 +90,11 @@ export const appRouter = router({
   payments: paymentsRouter,
   reservations: reservationsRouter,
   notifications: notificationsRouter,
+  catalogue: catalogueRouter,
+  crm: crmRouter,
+  reporting: reportingRouter,
+  access: accessRouter,
+  pricing: pricingRouter,
   admin: adminRouter,
   business: router({
     current: businessDatabaseProcedure.query(async ({ ctx }) => {

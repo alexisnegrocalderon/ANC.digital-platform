@@ -17,25 +17,25 @@ type ModuleMetadata = {
 };
 
 const MODULE_METADATA: Record<ModuleKey, ModuleMetadata> = {
-  catalogue: { category: "offer", skillKey: "modulo-catalogo", maturity: "contract-ready", requiresSetup: false, setupChecklist: ["Definir productos o servicios", "Crear categorías"], capabilities: ["public", "admin", "storage"] },
-  pricing: { category: "offer", skillKey: "modulo-precios", maturity: "contract-ready", requiresSetup: false, setupChecklist: ["Definir moneda", "Configurar reglas de precio"], capabilities: ["public", "admin"] },
+  catalogue: { category: "offer", skillKey: "modulo-catalogo", maturity: "implemented-hardening", requiresSetup: false, setupChecklist: ["Definir productos o servicios", "Crear categorías"], capabilities: ["public", "admin", "storage"] },
+  pricing: { category: "offer", skillKey: "modulo-precios", maturity: "implemented-hardening", requiresSetup: false, setupChecklist: ["Definir moneda", "Configurar reglas de precio"], capabilities: ["public", "admin"] },
   orders: { category: "commerce", skillKey: "modulo-pedidos", maturity: "scaffolded", requiresSetup: false, setupChecklist: ["Definir estados de pedido", "Configurar fulfillment"], capabilities: ["public", "admin"] },
   payments: { category: "commerce", skillKey: "modulo-pagos", maturity: "implemented-hardening", requiresSetup: true, setupChecklist: ["Configurar proveedor", "Registrar webhooks", "Probar sandbox"], capabilities: ["public", "admin", "webhooks", "external_api"] },
   pos: { category: "commerce", skillKey: "modulo-pos", maturity: "planned", requiresSetup: true, setupChecklist: ["Crear cajas", "Asignar operadores"], capabilities: ["admin"] },
   inventory: { category: "commerce", skillKey: "modulo-inventario", maturity: "planned", requiresSetup: true, setupChecklist: ["Definir almacenes", "Cargar existencias iniciales"], capabilities: ["admin", "jobs"] },
   billing: { category: "commerce", skillKey: "modulo-facturacion", maturity: "planned", requiresSetup: true, setupChecklist: ["Configurar datos tributarios", "Seleccionar adaptador"], capabilities: ["admin", "external_api", "webhooks"] },
-  crm: { category: "customer", skillKey: "modulo-crm", maturity: "contract-ready", requiresSetup: false, setupChecklist: ["Definir campos de cliente", "Configurar consentimiento"], capabilities: ["public", "admin"] },
+  crm: { category: "customer", skillKey: "modulo-crm", maturity: "implemented-hardening", requiresSetup: false, setupChecklist: ["Definir campos de cliente", "Configurar consentimiento"], capabilities: ["public", "admin"] },
   campaigns: { category: "customer", skillKey: "modulo-campanas", maturity: "planned", requiresSetup: true, setupChecklist: ["Definir consentimiento", "Configurar canal de campaña"], capabilities: ["admin", "jobs", "external_api"] },
   loyalty: { category: "customer", skillKey: "modulo-fidelizacion", maturity: "planned", requiresSetup: true, setupChecklist: ["Definir reglas de puntos", "Configurar niveles"], capabilities: ["public", "admin"] },
   notifications: { category: "customer", skillKey: "modulo-notificaciones", maturity: "implemented-hardening", requiresSetup: true, setupChecklist: ["Seleccionar canales", "Configurar templates", "Definir preferencias"], capabilities: ["admin", "jobs", "webhooks", "external_api"] },
   reviews: { category: "customer", skillKey: "modulo-resenas", maturity: "contract-ready", requiresSetup: false, setupChecklist: ["Definir preguntas", "Configurar moderación"], capabilities: ["public", "admin"] },
   reservations: { category: "operations", skillKey: "modulo-reservas", maturity: "implemented-hardening", requiresSetup: true, setupChecklist: ["Crear servicios", "Definir disponibilidad", "Configurar canal de confirmación"], capabilities: ["public", "admin", "jobs"] },
-  access: { category: "operations", skillKey: "modulo-acceso", maturity: "scaffolded", requiresSetup: true, setupChecklist: ["Configurar reglas de acceso", "Asignar operadores"], capabilities: ["public", "admin"] },
-  ticketing: { category: "operations", skillKey: "modulo-ticketera", maturity: "scaffolded", requiresSetup: true, setupChecklist: ["Definir tipos de ticket", "Configurar reglas de asistencia"], capabilities: ["public", "admin"] },
+  access: { category: "operations", skillKey: "modulo-acceso", maturity: "implemented-hardening", requiresSetup: true, setupChecklist: ["Configurar reglas de acceso", "Asignar operadores"], capabilities: ["public", "admin"] },
+  ticketing: { category: "operations", skillKey: "modulo-ticketera", maturity: "implemented-hardening", requiresSetup: true, setupChecklist: ["Definir tipos de ticket", "Configurar reglas de asistencia"], capabilities: ["public", "admin"] },
   wallet: { category: "commerce", skillKey: "modulo-billetera", maturity: "planned", requiresSetup: true, setupChecklist: ["Definir moneda", "Configurar reglas de consumo"], capabilities: ["public", "admin"] },
   delivery: { category: "commerce", skillKey: "modulo-delivery", maturity: "planned", requiresSetup: true, setupChecklist: ["Definir zonas", "Configurar tarifas", "Configurar despacho"], capabilities: ["public", "admin", "jobs", "external_api"] },
   branches: { category: "offer", skillKey: "modulo-sucursales", maturity: "contract-ready", requiresSetup: false, setupChecklist: ["Crear sucursales", "Definir horarios"], capabilities: ["admin"] },
-  reporting: { category: "intelligence", skillKey: "modulo-reportes", maturity: "contract-ready", requiresSetup: false, setupChecklist: ["Seleccionar indicadores", "Configurar periodos"], capabilities: ["admin", "jobs"] },
+  reporting: { category: "intelligence", skillKey: "modulo-reportes", maturity: "implemented-hardening", requiresSetup: false, setupChecklist: ["Seleccionar indicadores", "Configurar periodos"], capabilities: ["admin", "jobs"] },
   automations: { category: "intelligence", skillKey: "modulo-automatizaciones", maturity: "contract-ready", requiresSetup: true, setupChecklist: ["Definir triggers", "Configurar acciones", "Revisar permisos"], capabilities: ["admin", "jobs", "webhooks", "external_api"] },
 };
 

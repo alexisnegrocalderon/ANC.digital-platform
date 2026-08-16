@@ -288,6 +288,87 @@ export const notificationPreferences = pgTable(
   }),
 );
 
+export const catalogueItems = pgTable(
+  "catalogue_items",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    slug: varchar("slug", { length: 120 }).notNull(),
+    itemType: varchar("item_type", { length: 32 }).notNull().default("product"),
+    name: varchar("name", { length: 180 }).notNull(),
+    description: text("description"),
+    priceCents: integer("price_cents").notNull().default(0),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    status: varchar("status", { length: 32 }).notNull().default("draft"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessSlugUnique: uniqueIndex("catalogue_items_business_slug_unique").on(table.businessId, table.slug),
+    businessStatusIndex: index("catalogue_items_business_status_idx").on(table.businessId, table.status),
+    businessTypeIndex: index("catalogue_items_business_type_idx").on(table.businessId, table.itemType),
+  }),
+);
+
+export const pricingRules = pgTable(
+  "pricing_rules",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    catalogueItemId: integer("catalogue_item_id")
+      .notNull()
+      .references(() => catalogueItems.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 160 }).notNull(),
+    ruleType: varchar("rule_type", { length: 32 }).notNull().default("fixed"),
+    value: integer("value").notNull(),
+    priority: integer("priority").notNull().default(0),
+    status: varchar("status", { length: 32 }).notNull().default("draft"),
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessItemIndex: index("pricing_rules_business_item_idx").on(table.businessId, table.catalogueItemId),
+    businessStatusIndex: index("pricing_rules_business_status_idx").on(table.businessId, table.status),
+    activeWindowIndex: index("pricing_rules_active_window_idx").on(table.startsAt, table.endsAt),
+  }),
+);
+
+export const customers = pgTable(
+  "customers",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    externalKey: varchar("external_key", { length: 160 }),
+    name: varchar("name", { length: 180 }).notNull(),
+    email: varchar("email", { length: 320 }),
+    phoneE164: varchar("phone_e164", { length: 32 }),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    consent: jsonb("consent").$type<Record<string, unknown>>().notNull().default({}),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessExternalKeyUnique: uniqueIndex("customers_business_external_key_unique").on(
+      table.businessId,
+      table.externalKey,
+    ),
+    businessStatusIndex: index("customers_business_status_idx").on(table.businessId, table.status),
+    businessEmailIndex: index("customers_business_email_idx").on(table.businessId, table.email),
+  }),
+);
+
 export const bookingServices = pgTable(
   "booking_services",
   {
@@ -781,6 +862,9 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Membership = typeof memberships.$inferSelect;
 export type BusinessModule = typeof businessModules.$inferSelect;
+export type CatalogueItem = typeof catalogueItems.$inferSelect;
+export type PricingRule = typeof pricingRules.$inferSelect;
+export type Customer = typeof customers.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type DomainEvent = typeof domainEvents.$inferSelect;
