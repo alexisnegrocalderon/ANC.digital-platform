@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { ArrowUpRight, Boxes, Database, Layers3, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Boxes, Database, Layers3, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import { trpc } from "./lib/trpc";
 import { EventDemoPanel } from "./components/events/EventDemoPanel";
 import { BookingDemoPanel } from "./components/bookings/BookingDemoPanel";
 import { ModuleAdminPanel } from "./components/admin/ModuleAdminPanel";
+import { MembershipAdminPanel } from "./components/admin/MembershipAdminPanel";
+import { useAuth } from "./hooks/useAuth";
 
 const presetLabels = ["Eventos", "Restaurante", "Retail", "Salón", "Gimnasio", "Servicios"];
 
 export default function App() {
   const [selectedPreset, setSelectedPreset] = useState("Eventos");
+  const auth = useAuth();
+  const demoAdminPreview = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.search.includes("admin_modules=1"));
+  const canSeeAdmin = auth.user?.platformRole === "platform_admin" || demoAdminPreview;
   const health = trpc.system.health.useQuery(undefined, { retry: false });
   const modules = trpc.modules.list.useQuery(undefined, { retry: false });
   const business = trpc.business.current.useQuery(undefined, { retry: false });
@@ -25,6 +30,20 @@ export default function App() {
         <span className="topbar-status">
           {health.data?.ok ? "CORE ONLINE" : "CORE EN ESPERA"}
         </span>
+        <div className="auth-actions">
+          {auth.user ? (
+            <>
+              <span className="auth-user">{auth.user.name ?? auth.user.email ?? "Usuario"}</span>
+              <button type="button" className="auth-button" onClick={() => void auth.logout()} disabled={auth.loading}>
+                <LogOut size={14} /> Salir
+              </button>
+            </>
+          ) : (
+            <button type="button" className="auth-button" onClick={auth.login} disabled={auth.loading}>
+              <LogIn size={14} /> Ingresar
+            </button>
+          )}
+        </div>
       </header>
 
       <section className="hero-grid">
@@ -163,7 +182,12 @@ export default function App() {
 
       <EventDemoPanel />
       <BookingDemoPanel />
-      <ModuleAdminPanel />
+      {canSeeAdmin ? (
+        <>
+          <ModuleAdminPanel />
+          <MembershipAdminPanel />
+        </>
+      ) : null}
 
       <footer className="footer">
         <span>ANC Platform / owned digital infrastructure</span>

@@ -9,11 +9,26 @@ import { reservationsRouter } from "../modules/reservations/router";
 import { notificationsRouter } from "../modules/notifications/router";
 import { adminRouter } from "./adminRouter";
 import type { ModuleKey } from "../shared/module";
-import { businessDatabaseProcedure, databaseProcedure, publicProcedure, router } from "./trpc";
+import { COOKIE_NAME } from "../shared/const";
+import { getSessionCookieOptions } from "./auth";
+import {
+  businessAdminProcedure,
+  businessDatabaseProcedure,
+  databaseProcedure,
+  publicProcedure,
+  router,
+} from "./trpc";
 
 export const moduleKeySchema = z.enum(Object.keys(MODULE_MANIFESTS) as [ModuleKey, ...ModuleKey[]]);
 
 export const appRouter = router({
+  auth: router({
+    me: publicProcedure.query(({ ctx }) => ctx.user),
+    logout: publicProcedure.mutation(({ ctx }) => {
+      ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: 0 });
+      return { success: true } as const;
+    }),
+  }),
   system: router({
     health: publicProcedure.query(({ ctx }) => ({
       ok: true,
@@ -99,12 +114,12 @@ export const appRouter = router({
           ),
         );
     }),
-    enableModules: businessDatabaseProcedure
+    enableModules: businessAdminProcedure
       .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1) }))
       .mutation(async ({ ctx, input }) => {
         return enableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id);
       }),
-    disableModules: businessDatabaseProcedure
+    disableModules: businessAdminProcedure
       .input(z.object({ moduleKeys: z.array(moduleKeySchema).min(1) }))
       .mutation(async ({ ctx, input }) => {
         return disableBusinessModules(ctx.db, ctx.businessId, input.moduleKeys, ctx.user?.id);

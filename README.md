@@ -13,7 +13,7 @@
 | Multi-negocio | Esquema base con `businesses`, `users`, `memberships` y contexto por negocio. |
 | Registro modular | 20 módulos declarados con dependencias, permisos, navegación y presets. |
 | Vertical Eventos | Eventos, entradas, pedidos, tickets, checkout demo y validación de acceso. |
-| Autenticación productiva | Pendiente; el contexto por header solo funciona en desarrollo con `DEV_BUSINESS_CONTEXT_ENABLED=true`. |
+| Autenticación productiva | Manus OAuth, sesión JWT HttpOnly, memberships activas y roles server-side implementados; falta configurar credenciales del entorno productivo. |
 | Pagos | Stripe Checkout Sessions y MercadoPago Checkout Pro con webhooks firmados, idempotencia local y estados persistidos. |
 | Skills modulares | 20 skills `modulo-*` creadas y validadas; `modulo-whatsapp` se conserva como skill transversal. |
 | Admin de módulos | Catálogo por negocio, grupos, madurez, dependencias, setup, plan de activación, health y auditoría. |
@@ -31,7 +31,7 @@ pnpm run publish:demo-event
 pnpm run dev
 ```
 
-Durante la etapa local, el frontend consulta el negocio demo `anc-demo` mediante un header de desarrollo. El backend lo acepta solamente cuando `NODE_ENV` no es `production` y `DEV_BUSINESS_CONTEXT_ENABLED=true`. En producción se requiere una autenticación real basada en membresías antes de exponer rutas administrativas.
+Durante la etapa local, el frontend puede consultar el negocio demo `anc-demo` mediante un header de desarrollo. El backend lo acepta solamente cuando `NODE_ENV` no es `production` y `DEV_BUSINESS_CONTEXT_ENABLED=true`. En producción el header solo selecciona un negocio que el backend confirma contra una membership activa; no concede acceso por sí mismo. El panel admin exige `platform_role=platform_admin`.
 
 ## Comandos principales
 
@@ -56,7 +56,7 @@ El core vive en `server/`, `shared/`, `drizzle/` y `modules/core/`. El contrato 
 
 Cada módulo nuevo debe mantener sus servicios, router, esquema específico, pantallas y pruebas en su propio directorio. Las tablas de negocio deben incluir `businessId`, los importes deben usar enteros y moneda explícita, y las operaciones críticas deben generar auditoría o eventos de dominio. El core no debe conocer reglas particulares de eventos, restaurantes, gimnasios o servicios profesionales.
 
-Cada módulo también tiene una skill reutilizable en `/home/ubuntu/skills/modulo-*/SKILL.md`. La skill guía la implementación; el runtime se acopla mediante `ModuleManifest`, `modules/core/registry.ts`, `business_modules` y los routers del módulo. El panel admin está integrado en `ModuleAdminPanel` y usa `admin.modules.*`, `admin.businessModules.*` y `admin.audit.moduleChanges`.
+Cada módulo también tiene una skill reutilizable en `/home/ubuntu/skills/modulo-*/SKILL.md`. La skill guía la implementación; el runtime se acopla mediante `ModuleManifest`, `modules/core/registry.ts`, `business_modules` y los routers del módulo. El panel admin está integrado en `ModuleAdminPanel` y `MembershipAdminPanel`, y usa `admin.modules.*`, `admin.businessModules.*`, `admin.memberships.*` y `admin.audit.moduleChanges`. La autenticación usa `server/auth.ts`, `/api/auth/login`, `/api/oauth/callback`, `auth.me` y `auth.logout`.
 
 ## Módulos declarados
 
@@ -76,7 +76,7 @@ El proyecto pasó `pnpm test`, `pnpm run check`, `pnpm run build`, `pnpm run neo
 
 ## Pendientes antes de producción
 
-Antes de producción se debe completar autenticación real, membresías y permisos para configurar proveedores; pruebas sandbox reales de cada cuenta; resolver la ventana de fallo de red específica de MercadoPago Preferences API mediante Orders API o consulta/reconciliación; añadir reserva atómica de stock, QR firmado, rate limiting, observabilidad, backups y pruebas de integración sobre una branch aislada de Neon. Stripe y MercadoPago no deben considerarse activos hasta configurar sus secretos y URLs HTTPS en cada negocio.
+Antes de producción se deben configurar `VITE_APP_ID`, `OAUTH_SERVER_URL`, `VITE_OAUTH_PORTAL_URL`, `JWT_SECRET` y los dominios HTTPS autorizados. También se debe promover el primer usuario a `platform_admin` mediante un procedimiento operativo protegido, no desde el frontend. Faltan pruebas sandbox reales de cada cuenta; resolver la ventana de fallo de red específica de MercadoPago Preferences API mediante Orders API o consulta/reconciliación; añadir reserva atómica de stock, QR firmado, rate limiting, observabilidad, backups y pruebas de integración sobre una branch aislada de Neon. Stripe y MercadoPago no deben considerarse activos hasta configurar sus secretos y URLs HTTPS en cada negocio.
 
 ## Referencias técnicas
 

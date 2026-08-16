@@ -23,6 +23,19 @@ export function validateRuntimeConfig(env: NodeJS.ProcessEnv = process.env) {
     throw new Error("CRON_SECRET is required in production for notification jobs.");
   }
 
+  if (production && !env.JWT_SECRET?.trim()) {
+    throw new Error("JWT_SECRET is required in production for authenticated sessions.");
+  }
+  if (production && !env.VITE_APP_ID?.trim()) {
+    throw new Error("VITE_APP_ID is required in production for Manus OAuth.");
+  }
+  if (production && !env.OAUTH_SERVER_URL?.startsWith("https://")) {
+    throw new Error("OAUTH_SERVER_URL must be an HTTPS URL in production.");
+  }
+  if (production && !env.VITE_OAUTH_PORTAL_URL?.startsWith("https://")) {
+    throw new Error("VITE_OAUTH_PORTAL_URL must be an HTTPS URL in production.");
+  }
+
   if (production && env.PAYMENTS_ENCRYPTION_KEY) {
     const encryptionKey = Buffer.from(env.PAYMENTS_ENCRYPTION_KEY, "base64");
     if (encryptionKey.length !== 32) {

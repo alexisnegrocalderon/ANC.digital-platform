@@ -36,6 +36,7 @@ export const users = pgTable(
   {
     id: serial("id").primaryKey(),
     authSubject: varchar("auth_subject", { length: 160 }).notNull(),
+    platformRole: varchar("platform_role", { length: 32 }).notNull().default("user"),
     email: varchar("email", { length: 320 }),
     name: varchar("name", { length: 180 }),
     avatarUrl: text("avatar_url"),

@@ -10,6 +10,7 @@ import { handlePaymentWebhook } from "./webhooks/payments";
 import { handleWhatsAppVerification, handleWhatsAppWebhook } from "./webhooks/whatsapp";
 import { processDueAppointmentNotifications } from "../modules/notifications/service";
 import { requireDb } from "./db";
+import { registerAuthRoutes } from "./auth";
 
 validateRuntimeConfig();
 
@@ -17,6 +18,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
+
+registerAuthRoutes(app);
 
 app.post(
   "/api/payments/webhooks/stripe/:businessSlug",

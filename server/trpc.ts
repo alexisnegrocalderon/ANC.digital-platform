@@ -1,16 +1,34 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { AppContext } from "./context";
+import {
+  BUSINESS_ADMIN_ROLES,
+  BUSINESS_MANAGER_ROLES,
+  type BusinessRole,
+} from "../shared/auth";
 
 const t = initTRPC.context<AppContext>().create();
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Authentication required." });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
 export const businessProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.businessId) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "A business context is required for this operation.",
+    });
+  }
+  if (process.env.NODE_ENV === "production" && (!ctx.user || !ctx.businessRole)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "An active business membership is required.",
     });
   }
 
@@ -38,24 +56,6 @@ export const databaseProcedure = t.procedure.use(({ ctx, next }) => {
   });
 });
 
-export const adminDatabaseProcedure = databaseProcedure.use(({ ctx, next }) => {
-  // Development can exercise the admin shell with the demo business context.
-  // Production remains fail-closed until auth/memberships provide a real role.
-  if (process.env.NODE_ENV === "production" && !ctx.user) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "An authenticated administrative session is required for this operation.",
-    });
-  }
-
-  return next({
-    ctx: {
-      ...ctx,
-      db: ctx.db,
-    },
-  });
-});
-
 export const businessDatabaseProcedure = businessProcedure.use(({ ctx, next }) => {
   if (!ctx.db) {
     throw new TRPCError({
@@ -72,3 +72,35 @@ export const businessDatabaseProcedure = businessProcedure.use(({ ctx, next }) =
     },
   });
 });
+
+export const businessManagerProcedure = businessDatabaseProcedure.use(({ ctx, next }) => {
+  if (
+    !ctx.businessRole ||
+    !(BUSINESS_MANAGER_ROLES as readonly BusinessRole[]).includes(ctx.businessRole)
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Business manager permission required." });
+  }
+  return next({ ctx: { ...ctx, businessRole: ctx.businessRole } });
+});
+
+export const businessAdminProcedure = businessDatabaseProcedure.use(({ ctx, next }) => {
+  if (
+    !ctx.businessRole ||
+    !(BUSINESS_ADMIN_ROLES as readonly BusinessRole[]).includes(ctx.businessRole)
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Business administrator permission required." });
+  }
+  return next({ ctx: { ...ctx, businessRole: ctx.businessRole } });
+});
+
+export const platformAdminProcedure = databaseProcedure.use(({ ctx, next }) => {
+  const developmentDemo =
+    process.env.NODE_ENV !== "production" && process.env.DEV_BUSINESS_CONTEXT_ENABLED === "true";
+  if (!developmentDemo && (!ctx.user || ctx.user.platformRole !== "platform_admin")) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Platform administrator permission required." });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
+// Compatibility export used by the module admin router.
+export const adminDatabaseProcedure = platformAdminProcedure;

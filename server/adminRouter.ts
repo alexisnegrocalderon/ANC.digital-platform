@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ModuleKey } from "../shared/module";
+import { BUSINESS_ROLE_KEYS } from "../shared/auth";
 import { MODULE_MANIFESTS } from "../modules/core/registry";
 import {
   getAdminActivationPlan,
@@ -11,14 +12,40 @@ import {
   enableAdminModules,
   updateAdminModuleSettings,
 } from "./services/moduleAdmin";
+import { listBusinessMemberships, revokeBusinessMembership, setBusinessMembershipRole } from "./services/memberships";
 import { adminDatabaseProcedure, router } from "./trpc";
 
+const businessRoleSchema = z.enum([...BUSINESS_ROLE_KEYS] as [string, ...string[]]);
 const moduleKeySchema = z.enum(Object.keys(MODULE_MANIFESTS) as [ModuleKey, ...ModuleKey[]]);
 const businessInput = z.object({ businessId: z.number().int().positive() });
 
 export const adminRouter = router({
   businesses: router({
     list: adminDatabaseProcedure.query(({ ctx }) => listBusinessesForAdmin(ctx.db)),
+  }),
+  memberships: router({
+    list: adminDatabaseProcedure
+      .input(businessInput)
+      .query(({ ctx, input }) => listBusinessMemberships(ctx.db, input.businessId)),
+    setRole: adminDatabaseProcedure
+      .input(businessInput.extend({ userId: z.number().int().positive(), roleKey: businessRoleSchema }))
+      .mutation(({ ctx, input }) =>
+        setBusinessMembershipRole(ctx.db, {
+          businessId: input.businessId,
+          userId: input.userId,
+          roleKey: input.roleKey,
+          actorUserId: ctx.user?.id,
+        }),
+      ),
+    revoke: adminDatabaseProcedure
+      .input(businessInput.extend({ userId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) =>
+        revokeBusinessMembership(ctx.db, {
+          businessId: input.businessId,
+          userId: input.userId,
+          actorUserId: ctx.user?.id,
+        }),
+      ),
   }),
   modules: router({
     catalog: adminDatabaseProcedure
