@@ -313,6 +313,92 @@ export const catalogueItems = pgTable(
   }),
 );
 
+export const courses = pgTable(
+  "courses",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    slug: varchar("slug", { length: 120 }).notNull(),
+    title: varchar("title", { length: 220 }).notNull(),
+    description: text("description"),
+    priceCents: integer("price_cents").notNull().default(0),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    status: varchar("status", { length: 32 }).notNull().default("draft"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessSlugUnique: uniqueIndex("courses_business_slug_unique").on(table.businessId, table.slug),
+    businessStatusIndex: index("courses_business_status_idx").on(table.businessId, table.status),
+  }),
+);
+
+export const courseLessons = pgTable(
+  "course_lessons",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 220 }).notNull(),
+    position: integer("position").notNull(),
+    contentType: varchar("content_type", { length: 32 }).notNull().default("video"),
+    contentUrl: text("content_url"),
+    durationMinutes: integer("duration_minutes"),
+    preview: boolean("preview").notNull().default(false),
+    status: varchar("status", { length: 32 }).notNull().default("draft"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessCoursePositionUnique: uniqueIndex("course_lessons_business_course_position_unique").on(
+      table.businessId,
+      table.courseId,
+      table.position,
+    ),
+    businessCourseIndex: index("course_lessons_business_course_idx").on(table.businessId, table.courseId),
+  }),
+);
+
+export const courseEnrollments = pgTable(
+  "course_enrollments",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    learnerEmail: varchar("learner_email", { length: 320 }).notNull(),
+    learnerName: varchar("learner_name", { length: 180 }),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    progressPct: integer("progress_pct").notNull().default(0),
+    enrolledAt: timestamp("enrolled_at", { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessCourseLearnerUnique: uniqueIndex("course_enrollments_business_course_learner_unique").on(
+      table.businessId,
+      table.courseId,
+      table.learnerEmail,
+    ),
+    businessCourseIndex: index("course_enrollments_business_course_idx").on(table.businessId, table.courseId),
+    businessLearnerIndex: index("course_enrollments_business_learner_idx").on(table.businessId, table.learnerEmail),
+  }),
+);
+
 export const pricingRules = pgTable(
   "pricing_rules",
   {
@@ -564,6 +650,39 @@ export const appointmentNotifications = pgTable(
       table.businessId,
       table.appointmentId,
     ),
+  }),
+);
+
+export const notificationOutbox = pgTable(
+  "notification_outbox",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    entityType: varchar("entity_type", { length: 64 }).notNull(),
+    entityId: varchar("entity_id", { length: 128 }),
+    channel: varchar("channel", { length: 32 }).notNull().default("email"),
+    eventType: varchar("event_type", { length: 96 }).notNull(),
+    recipient: varchar("recipient", { length: 320 }).notNull(),
+    subject: varchar("subject", { length: 240 }).notNull(),
+    templateName: varchar("template_name", { length: 160 }).notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("queued"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    providerMessageId: varchar("provider_message_id", { length: 255 }),
+    lastError: text("last_error"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    idempotencyUnique: uniqueIndex("notification_outbox_business_idempotency_unique").on(table.businessId, table.idempotencyKey),
+    dueIndex: index("notification_outbox_due_idx").on(table.status, table.nextAttemptAt),
+    entityIndex: index("notification_outbox_business_entity_idx").on(table.businessId, table.entityType, table.entityId),
   }),
 );
 
@@ -864,6 +983,10 @@ export type Membership = typeof memberships.$inferSelect;
 export type BusinessModule = typeof businessModules.$inferSelect;
 export type CatalogueItem = typeof catalogueItems.$inferSelect;
 export type PricingRule = typeof pricingRules.$inferSelect;
+export type Course = typeof courses.$inferSelect;
+export type CourseLesson = typeof courseLessons.$inferSelect;
+export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
+export type NotificationOutbox = typeof notificationOutbox.$inferSelect;
 export type Customer = typeof customers.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type AuditEvent = typeof auditEvents.$inferSelect;

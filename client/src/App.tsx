@@ -6,6 +6,7 @@ import { BookingDemoPanel } from "./components/bookings/BookingDemoPanel";
 import { ModuleAdminPanel } from "./components/admin/ModuleAdminPanel";
 import { MembershipAdminPanel } from "./components/admin/MembershipAdminPanel";
 import { BaseModulesPanel } from "./components/base/BaseModulesPanel";
+import { CourseDeliveryPanel } from "./components/courses/CourseDeliveryPanel";
 import { useAuth } from "./hooks/useAuth";
 
 const presetLabels = ["Eventos", "Restaurante", "Retail", "Salón", "Gimnasio", "Servicios"];
@@ -182,6 +183,7 @@ export default function App() {
       </section>
 
       <BaseModulesPanel enabledKeys={enabledModules.data?.map((module) => module.moduleKey) ?? []} />
+      <CourseDeliveryPanel />
       <EventDemoPanel />
       <BookingDemoPanel />
       {canSeeAdmin ? (

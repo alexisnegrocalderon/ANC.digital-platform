@@ -12,6 +12,8 @@ import { crmRouter } from "../modules/crm/router";
 import { reportingRouter } from "../modules/reporting/router";
 import { accessRouter } from "../modules/access/router";
 import { pricingRouter } from "../modules/pricing/router";
+import { courseDeliveryRouter } from "../modules/course-delivery/router";
+import { mailingRouter } from "../modules/mailing/router";
 import { adminRouter } from "./adminRouter";
 import type { ModuleKey } from "../shared/module";
 import { COOKIE_NAME } from "../shared/const";
@@ -95,6 +97,8 @@ export const appRouter = router({
   reporting: reportingRouter,
   access: accessRouter,
   pricing: pricingRouter,
+  courseDelivery: courseDeliveryRouter,
+  mailing: mailingRouter,
   admin: adminRouter,
   business: router({
     current: businessDatabaseProcedure.query(async ({ ctx }) => {

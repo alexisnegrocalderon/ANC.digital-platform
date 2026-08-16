@@ -2,6 +2,7 @@ export function validateRuntimeConfig(env: NodeJS.ProcessEnv = process.env) {
   const production = env.NODE_ENV === "production";
   const databaseConfigured = Boolean(env.DATABASE_URL?.trim());
   const demoContextEnabled = env.DEV_BUSINESS_CONTEXT_ENABLED === "true";
+  const mailingEnabled = env.MAILING_ENABLED === "true";
 
   if (production && !databaseConfigured) {
     throw new Error("DATABASE_URL is required in production.");
@@ -21,6 +22,18 @@ export function validateRuntimeConfig(env: NodeJS.ProcessEnv = process.env) {
 
   if (production && !env.CRON_SECRET?.trim()) {
     throw new Error("CRON_SECRET is required in production for notification jobs.");
+  }
+
+  if (production && mailingEnabled && !env.RESEND_API_KEY?.trim()) {
+    throw new Error("RESEND_API_KEY is required in production when mailing is enabled.");
+  }
+
+  if (production && mailingEnabled && !env.RESEND_FROM_EMAIL?.trim()) {
+    throw new Error("RESEND_FROM_EMAIL is required in production when mailing is enabled.");
+  }
+
+  if (production && mailingEnabled && env.RESEND_FROM_EMAIL?.toLowerCase().includes("@resend.dev")) {
+    throw new Error("RESEND_FROM_EMAIL must use a verified client domain in production.");
   }
 
   if (production && !env.JWT_SECRET?.trim()) {
@@ -56,5 +69,6 @@ export function validateRuntimeConfig(env: NodeJS.ProcessEnv = process.env) {
     production,
     databaseConfigured,
     demoContextEnabled,
+    mailingEnabled,
   } as const;
 }

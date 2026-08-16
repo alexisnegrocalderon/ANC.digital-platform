@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0",
+  "client": {
+    "name": "Natalia Rodriguez Studio",
+    "slug": "retiro-acrocordones",
+    "vertical": "services",
+    "subvertical": "aesthetics",
+    "country": "CL",
+    "locale": "es-CL",
+    "currency": "CLP",
+    "timezone": "America/Santiago"
+  },
+  "environments": {
+    "staging": {
+      "status": "dry_run_ready",
+      "domain": "retiro-acrocordones-staging.ancdigital.cl",
+      "domain_owner": "ANC",
+      "domain_purchase_required": false
+    },
+    "production": {
+      "status": "blocked",
+      "domain": null,
+      "domain_owner": "client",
+      "domain_purchase_required": true
+    }
+  },
+  "preset": {
+    "key": "services",
+    "version": "v1",
+    "customization": "aesthetics"
+  },
+  "modules": {
+    "enabled": [
+      "catalogue",
+      "pricing",
+      "crm",
+      "reservations",
+      "reporting",
+      "notifications"
+    ],
+    "setup_pending": [
+      "notifications",
+      "payments"
+    ],
+    "blocked_until_runtime": [
+      "orders"
+    ],
+    "optional_review": [
+      "reviews",
+      "automations"
+    ]
+  },
+  "extensions": [
+    {
+      "key": "course-delivery",
+      "type": "client-extension-candidate",
+      "status": "staging-ready-production-blocked",
+      "reusable": "evaluate-after-pilot"
+    }
+  ],
+  "integrations": {
+    "mercadopago": {
+      "owner": "client",
+      "status": "client_account_confirmed_credentials_pending"
+    },
+    "stripe": {
+      "owner": "client",
+      "status": "optional"
+    },
+    "whatsapp": {
+      "owner": "client",
+      "status": "client_waba_confirmed_credentials_pending"
+    },
+    "mailing": {
+      "owner": "client",
+      "provider": "resend",
+      "status": "manual_required",
+      "outbox": "idempotent",
+      "requirements": [
+        "RESEND_API_KEY",
+        "client_domain_purchase",
+        "verified_sending_domain",
+        "from_address"
+      ]
+    },
+    "domain": {
+      "owner": "client",
+      "staging_status": "anc_subdomain_planned",
+      "production_status": "client_domain_required"
+    }
+  },
+  "brand": {
+    "status": "assets_available_pending_upload",
+    "logo": null,
+    "colors": null,
+    "typography": null,
+    "tone": null
+  },
+  "approvals": {
+    "anc_platform_owner": "pending",
+    "client_branding": "assets_confirmed_upload_pending",
+    "client_integrations": "accounts_confirmed_credentials_pending",
+    "production_release": "blocked"
+  }
+}
