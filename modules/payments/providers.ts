@@ -29,7 +29,7 @@ export type PaymentAdapter = {
   }): Promise<NormalizedWebhookEvent>;
 };
 
-function requireHttpUrl(value: string, name: string) {
+export function requireHttpUrl(value: string, name: string) {
   const parsed = new URL(value);
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new Error(`${name} must use http or https.`);
@@ -37,7 +37,7 @@ function requireHttpUrl(value: string, name: string) {
   return value;
 }
 
-async function readJsonResponse(response: Response) {
+export async function readJsonResponse(response: Response) {
   const raw = await response.text();
   let payload: unknown = {};
   try {
@@ -84,7 +84,7 @@ function constantTimeHexEqual(actual: string, expected: string) {
   return difference === 0;
 }
 
-function verifyMercadoPagoSignature(
+export function verifyMercadoPagoSignature(
   rawBody: string,
   headers: Record<string, string | string[] | undefined>,
   query: Record<string, string | string[] | undefined>,

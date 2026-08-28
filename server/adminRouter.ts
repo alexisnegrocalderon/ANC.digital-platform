@@ -14,6 +14,7 @@ import {
   updateAdminModuleSettings,
 } from "./services/moduleAdmin";
 import { listBusinessMemberships, revokeBusinessMembership, setBusinessMembershipRole } from "./services/memberships";
+import { agencyBillingRouter } from "../modules/agency-billing/router";
 import { adminDatabaseProcedure, router } from "./trpc";
 
 const businessRoleSchema = z.enum([...BUSINESS_ROLE_KEYS] as [string, ...string[]]);
@@ -22,6 +23,7 @@ const moduleKeySchema = z.enum(Object.keys(MODULE_MANIFESTS) as [ModuleKey, ...M
 const businessInput = z.object({ businessId: z.number().int().positive() });
 
 export const adminRouter = router({
+  billing: agencyBillingRouter,
   businesses: router({
     list: adminDatabaseProcedure.query(({ ctx }) => listBusinessesForAdmin(ctx.db)),
   }),

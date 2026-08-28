@@ -975,6 +975,100 @@ export const accessLogs = pgTable(
   }),
 );
 
+export const agencyAgreements = pgTable(
+  "agency_agreements",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 220 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    collectionMode: varchar("collection_mode", { length: 32 }).notNull().default("manual_link"),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    totalAmountCents: integer("total_amount_cents").notNull().default(0),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessIndex: index("agency_agreements_business_idx").on(table.businessId),
+    businessStatusIndex: index("agency_agreements_business_status_idx").on(table.businessId, table.status),
+  }),
+);
+
+export const agencyInstallments = pgTable(
+  "agency_installments",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    agreementId: integer("agreement_id")
+      .notNull()
+      .references(() => agencyAgreements.id, { onDelete: "cascade" }),
+    sequence: integer("sequence").notNull(),
+    dueDate: varchar("due_date", { length: 10 }).notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    status: varchar("status", { length: 32 }).notNull().default("scheduled"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    paidAmountCents: integer("paid_amount_cents"),
+    paymentMethodNote: varchar("payment_method_note", { length: 240 }),
+    mpPreapprovalId: varchar("mp_preapproval_id", { length: 255 }),
+    paymentAttemptId: integer("payment_attempt_id").references(() => paymentAttempts.id, {
+      onDelete: "set null",
+    }),
+    lastEditedByUserId: integer("last_edited_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessIndex: index("agency_installments_business_idx").on(table.businessId),
+    agreementSequenceUnique: uniqueIndex("agency_installments_agreement_sequence_unique").on(
+      table.agreementId,
+      table.sequence,
+    ),
+    statusDueDateIndex: index("agency_installments_status_due_date_idx").on(table.status, table.dueDate),
+  }),
+);
+
+export const agencySubscriptions = pgTable(
+  "agency_subscriptions",
+  {
+    id: serial("id").primaryKey(),
+    businessId: integer("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    agreementId: integer("agreement_id")
+      .notNull()
+      .references(() => agencyAgreements.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 32 }).notNull().default("mercadopago"),
+    externalPreapprovalId: varchar("external_preapproval_id", { length: 255 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    payerEmail: varchar("payer_email", { length: 320 }),
+    frequencyType: varchar("frequency_type", { length: 32 }).notNull().default("months"),
+    frequency: integer("frequency").notNull().default(1),
+    amountCents: integer("amount_cents").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
+    startDate: varchar("start_date", { length: 10 }),
+    endDate: varchar("end_date", { length: 10 }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    businessIndex: index("agency_subscriptions_business_idx").on(table.businessId),
+    businessExternalUnique: uniqueIndex("agency_subscriptions_business_external_unique").on(
+      table.businessId,
+      table.externalPreapprovalId,
+    ),
+    agreementIndex: index("agency_subscriptions_agreement_idx").on(table.agreementId),
+  }),
+);
+
 export type Business = typeof businesses.$inferSelect;
 export type InsertBusiness = typeof businesses.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -1007,3 +1101,6 @@ export type PaymentWebhookEvent = typeof paymentWebhookEvents.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Ticket = typeof tickets.$inferSelect;
 export type AccessLog = typeof accessLogs.$inferSelect;
+export type AgencyAgreement = typeof agencyAgreements.$inferSelect;
+export type AgencyInstallment = typeof agencyInstallments.$inferSelect;
+export type AgencySubscription = typeof agencySubscriptions.$inferSelect;

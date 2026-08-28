@@ -9,6 +9,9 @@ import { validateRuntimeConfig } from "./config";
 import { handlePaymentWebhook } from "./webhooks/payments";
 import { handleWhatsAppVerification, handleWhatsAppWebhook } from "./webhooks/whatsapp";
 import { processDueAppointmentNotifications } from "../modules/notifications/service";
+import { processDueEmailNotifications } from "../modules/mailing/service";
+import { processDueInstallmentReminders } from "../modules/agency-billing/service";
+import { handleAgencySubscriptionWebhook } from "../modules/agency-billing/webhook";
 import { requireDb } from "./db";
 import { registerAuthRoutes } from "./auth";
 import { registerControlPlaneRoutes } from "./controlPlaneRouter";
@@ -32,6 +35,11 @@ app.post(
   express.raw({ type: "application/json", limit: "1mb" }),
   (request, response) => handlePaymentWebhook("mercadopago", request.params.businessSlug, request, response),
 );
+app.post(
+  "/api/payments/webhooks/mercadopago-subscription/:businessSlug",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  (request, response) => handleAgencySubscriptionWebhook(request.params.businessSlug, request, response),
+);
 app.get(
   "/api/whatsapp/webhooks/:businessSlug",
   (request, response) => handleWhatsAppVerification(request.params.businessSlug, request, response),
@@ -51,8 +59,21 @@ app.post("/api/internal/jobs/notifications", async (request, response) => {
     return response.status(401).json({ error: "Unauthorized job request." });
   }
   try {
-    const result = await processDueAppointmentNotifications(requireDb(), Number(request.body?.limit ?? 20));
-    return response.status(200).json({ ok: true, processed: result });
+    const limit = Number(request.body?.limit ?? 20);
+    const db = requireDb();
+    const [appointmentNotifications, emailNotifications, installmentReminders] = await Promise.all([
+      processDueAppointmentNotifications(db, limit),
+      processDueEmailNotifications(db, limit),
+      processDueInstallmentReminders(db, limit),
+    ]);
+    return response.status(200).json({
+      ok: true,
+      processed: {
+        appointmentNotifications,
+        emailNotifications,
+        installmentReminders,
+      },
+    });
   } catch (error) {
     return response.status(500).json({ error: error instanceof Error ? error.message : "Notification job failed." });
   }
