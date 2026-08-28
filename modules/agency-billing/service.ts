@@ -587,6 +587,113 @@ function reminderIdempotencyKey(installmentId: number, offsetDays: number, dueDa
   return `agency-installment-${installmentId}-offset-${offsetDays}-due-${dueDate}`;
 }
 
+async function queueSingleInstallmentReminder(
+  db: DatabaseLike,
+  input: {
+    installment: typeof agencyInstallments.$inferSelect;
+    agreement: typeof agencyAgreements.$inferSelect;
+    businessName: string;
+    offsetDays: number;
+    forced?: boolean;
+  },
+): Promise<{ installmentId: number; action: string; offsetDays?: number; error?: string }> {
+  const { installment, agreement, businessName, offsetDays, forced } = input;
+  try {
+    const recipient = await resolveBillingContactEmail(db, installment.businessId);
+    if (!recipient) {
+      return { installmentId: installment.id, action: "skipped_no_recipient", offsetDays };
+    }
+
+    let paymentUrl: string | undefined;
+    if (agreement.collectionMode === "manual_link") {
+      try {
+        const link = await createInstallmentPaymentLink(db, {
+          installmentId: installment.id,
+          provider: "mercadopago",
+        });
+        paymentUrl = link.checkoutUrl;
+      } catch {
+        // Payment provider might not be configured yet; still send the reminder without a link.
+        paymentUrl = undefined;
+      }
+    }
+
+    const email = buildInstallmentReminderEmail({
+      businessName,
+      installmentSequence: installment.sequence,
+      dueDate: installment.dueDate,
+      amountCents: installment.amountCents,
+      currency: installment.currency,
+      paymentUrl,
+      offsetDays,
+    });
+
+    const idempotencyKey = forced
+      ? `${reminderIdempotencyKey(installment.id, offsetDays, installment.dueDate)}-manual-${Date.now()}`
+      : reminderIdempotencyKey(installment.id, offsetDays, installment.dueDate);
+
+    await queueEmail(db, installment.businessId, {
+      entityType: "agency_installment",
+      entityId: String(installment.id),
+      eventType: offsetDays > 0 ? "agency_installment.overdue_reminder" : "agency_installment.due_reminder",
+      recipient,
+      subject: email.subject,
+      templateName: "agency-installment-reminder",
+      payload: { html: email.html, text: email.text, offsetDays },
+      idempotencyKey,
+    });
+
+    const nextStatus = offsetDays > 0 ? "overdue" : "reminder_sent";
+    if (installment.status !== nextStatus) {
+      await db
+        .update(agencyInstallments)
+        .set({ status: nextStatus, updatedAt: new Date() })
+        .where(eq(agencyInstallments.id, installment.id));
+    }
+
+    return { installmentId: installment.id, action: "reminder_queued", offsetDays };
+  } catch (error) {
+    const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown reminder error";
+    return { installmentId: installment.id, action: "error", offsetDays, error: message };
+  }
+}
+
+/**
+ * Force-queue a reminder for one installment right now, regardless of whether it currently
+ * falls inside a scheduled reminder window. Used by the "resend reminder" admin action, which
+ * would otherwise silently no-op for an installment that isn't due today.
+ */
+export async function sendInstallmentReminderNow(db: DatabaseLike, installmentId: number) {
+  const [row] = await db
+    .select({
+      installment: agencyInstallments,
+      agreement: agencyAgreements,
+      businessName: businesses.name,
+    })
+    .from(agencyInstallments)
+    .innerJoin(agencyAgreements, eq(agencyAgreements.id, agencyInstallments.agreementId))
+    .innerJoin(businesses, eq(businesses.id, agencyInstallments.businessId))
+    .where(eq(agencyInstallments.id, installmentId))
+    .limit(1);
+  if (!row) throw new Error("Installment not found.");
+  if (row.installment.status === "paid" || row.installment.status === "waived" || row.installment.status === "cancelled") {
+    throw new Error(`Cannot send a reminder for an installment with status "${row.installment.status}".`);
+  }
+
+  const today = todayDateStr();
+  const dueDate = new Date(`${row.installment.dueDate}T00:00:00.000Z`);
+  const todayDate = new Date(`${today}T00:00:00.000Z`);
+  const offsetDays = Math.round((todayDate.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000));
+
+  return queueSingleInstallmentReminder(db, {
+    installment: row.installment,
+    agreement: row.agreement,
+    businessName: row.businessName,
+    offsetDays,
+    forced: true,
+  });
+}
+
 export async function processDueInstallmentReminders(db: DatabaseLike, limit = 50) {
   const today = todayDateStr();
   const candidates = await db
@@ -623,61 +730,9 @@ export async function processDueInstallmentReminders(db: DatabaseLike, limit = 5
       continue;
     }
 
-    try {
-      const recipient = await resolveBillingContactEmail(db, installment.businessId);
-      if (!recipient) {
-        results.push({ installmentId: installment.id, action: "skipped_no_recipient", offsetDays: matchedOffset });
-        continue;
-      }
-
-      let paymentUrl: string | undefined;
-      if (agreement.collectionMode === "manual_link") {
-        try {
-          const link = await createInstallmentPaymentLink(db, {
-            installmentId: installment.id,
-            provider: "mercadopago",
-          });
-          paymentUrl = link.checkoutUrl;
-        } catch {
-          // Payment provider might not be configured yet; still send the reminder without a link.
-          paymentUrl = undefined;
-        }
-      }
-
-      const email = buildInstallmentReminderEmail({
-        businessName,
-        installmentSequence: installment.sequence,
-        dueDate: installment.dueDate,
-        amountCents: installment.amountCents,
-        currency: installment.currency,
-        paymentUrl,
-        offsetDays: matchedOffset,
-      });
-
-      await queueEmail(db, installment.businessId, {
-        entityType: "agency_installment",
-        entityId: String(installment.id),
-        eventType: matchedOffset > 0 ? "agency_installment.overdue_reminder" : "agency_installment.due_reminder",
-        recipient,
-        subject: email.subject,
-        templateName: "agency-installment-reminder",
-        payload: { html: email.html, text: email.text, offsetDays: matchedOffset },
-        idempotencyKey: reminderIdempotencyKey(installment.id, matchedOffset, installment.dueDate),
-      });
-
-      const nextStatus = matchedOffset > 0 ? "overdue" : "reminder_sent";
-      if (installment.status !== nextStatus) {
-        await db
-          .update(agencyInstallments)
-          .set({ status: nextStatus, updatedAt: new Date() })
-          .where(eq(agencyInstallments.id, installment.id));
-      }
-
-      results.push({ installmentId: installment.id, action: "reminder_queued", offsetDays: matchedOffset });
-    } catch (error) {
-      const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown reminder error";
-      results.push({ installmentId: installment.id, action: "error", offsetDays: matchedOffset, error: message });
-    }
+    results.push(
+      await queueSingleInstallmentReminder(db, { installment, agreement, businessName, offsetDays: matchedOffset }),
+    );
   }
 
   return results;

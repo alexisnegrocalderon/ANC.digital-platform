@@ -14,6 +14,7 @@ import {
   markInstallmentPaid,
   processDueInstallmentReminders,
   recreateSubscription,
+  sendInstallmentReminderNow,
   setCollectionMode,
   updateInstallment,
   waiveInstallment,
@@ -90,11 +91,7 @@ export const agencyBillingRouter = router({
       .mutation(({ ctx, input }) => deleteInstallment(ctx.db, { ...input, actorUserId: ctx.user?.id })),
     resendReminder: platformAdminProcedure
       .input(z.object({ installmentId: z.number().int().positive() }))
-      .mutation(async ({ ctx, input }) => {
-        // Re-trigger the reminder scan; if this installment is currently due it will be re-queued.
-        const results = await processDueInstallmentReminders(ctx.db, 200);
-        return results.filter((result) => result.installmentId === input.installmentId);
-      }),
+      .mutation(({ ctx, input }) => sendInstallmentReminderNow(ctx.db, input.installmentId)),
     createPaymentLink: platformAdminProcedure
       .input(
         z.object({

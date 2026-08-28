@@ -45,6 +45,8 @@ export function BillingAdminPanel() {
   const [editingInstallmentId, setEditingInstallmentId] = useState<number | null>(null);
   const [editDueDate, setEditDueDate] = useState("");
   const [editAmountCents, setEditAmountCents] = useState("");
+  const [addDraftDueDate, setAddDraftDueDate] = useState("");
+  const [addDraftAmount, setAddDraftAmount] = useState("");
 
   const utils = trpc.useUtils();
   const businesses = trpc.admin.businesses.list.useQuery(undefined, { retry: false });
@@ -89,7 +91,7 @@ export function BillingAdminPanel() {
   const cancelSubscription = trpc.admin.billing.subscriptions.cancel.useMutation({ onSuccess: () => invalidateAll() });
   const recreateSubscription = trpc.admin.billing.subscriptions.recreate.useMutation({ onSuccess: () => invalidateAll() });
 
-  const businessList = businesses.data ?? [{ id: 1, name: "ANC Platform Demo" }];
+  const businessList = businesses.data ?? [];
 
   const handleAddDraftRow = () => {
     setNewInstallments((rows) => [...rows, { dueDate: "", amountCents: "" }]);
@@ -191,6 +193,11 @@ export function BillingAdminPanel() {
             ))}
           </select>
         </label>
+        {!businesses.isLoading && businessList.length === 0 ? (
+          <p className="booking-muted">
+            <AlertTriangle size={16} /> No hay negocios cargados todavía — crea uno primero en el panel de negocios.
+          </p>
+        ) : null}
       </div>
 
       {creatingFor !== null ? (
@@ -284,6 +291,9 @@ export function BillingAdminPanel() {
               <option value="mp_subscription">Suscripción Mercado Pago</option>
             </select>
           </label>
+
+          {resendReminder.error ? <p className="admin-error"><AlertTriangle size={15} /> {resendReminder.error.message}</p> : null}
+          {markPaid.error ? <p className="admin-error"><AlertTriangle size={15} /> {markPaid.error.message}</p> : null}
 
           <div className="membership-list">
             {agreementDetail.data.installments.map((installment: any) => (
@@ -387,20 +397,44 @@ export function BillingAdminPanel() {
             ))}
           </div>
 
-          <button
-            type="button"
-            className="auth-button"
-            onClick={() =>
-              addInstallment.mutate({
-                agreementId: agreementDetail.data!.agreement.id,
-                dueDate: new Date().toISOString().slice(0, 10),
-                amountCents: 0,
-              })
-            }
-            disabled={addInstallment.isPending}
-          >
-            <Plus size={14} /> Agregar cuota
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end", flexWrap: "wrap" }}>
+            <label>
+              Nueva cuota — vencimiento
+              <input type="date" value={addDraftDueDate} onChange={(event) => setAddDraftDueDate(event.target.value)} />
+            </label>
+            <label>
+              Monto
+              <input
+                type="number"
+                min={0}
+                value={addDraftAmount}
+                onChange={(event) => setAddDraftAmount(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="auth-button"
+              disabled={addInstallment.isPending || !addDraftDueDate || !addDraftAmount || Number(addDraftAmount) <= 0}
+              onClick={() => {
+                addInstallment.mutate(
+                  {
+                    agreementId: agreementDetail.data!.agreement.id,
+                    dueDate: addDraftDueDate,
+                    amountCents: Math.round(Number(addDraftAmount) * 100),
+                  },
+                  {
+                    onSuccess: () => {
+                      setAddDraftDueDate("");
+                      setAddDraftAmount("");
+                    },
+                  },
+                );
+              }}
+            >
+              <Plus size={14} /> Agregar cuota
+            </button>
+          </div>
+          {addInstallment.error ? <p className="admin-error"><AlertTriangle size={15} /> {addInstallment.error.message}</p> : null}
 
           {agreementDetail.data.agreement.collectionMode === "mp_subscription" ? (
             <div className="membership-list">
