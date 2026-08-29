@@ -1323,6 +1323,18 @@ h2 {
   opacity: 0.55;
 }
 
+.auth-button-secondary {
+  font-size: 0.78rem;
+  padding: 8px 10px;
+  opacity: 0.85;
+}
+
+.auth-error {
+  color: #b3261e;
+  font-size: 0.75rem;
+  max-width: 220px;
+}
+
 .admin-memberships-section {
   padding: 88px 5vw;
   background: #f2eee5;

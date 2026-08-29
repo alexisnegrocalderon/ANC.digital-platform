@@ -1,4 +1,5 @@
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -79,6 +80,29 @@ export const memberships = pgTable(
     ),
     userIndex: index("memberships_user_idx").on(table.userId),
     businessIndex: index("memberships_business_idx").on(table.businessId),
+  }),
+);
+
+export const webauthnCredentials = pgTable(
+  "webauthn_credentials",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    credentialId: text("credential_id").notNull(),
+    publicKey: text("public_key").notNull(),
+    counter: bigint("counter", { mode: "number" }).notNull().default(0),
+    deviceType: varchar("device_type", { length: 20 }),
+    backedUp: boolean("backed_up").notNull().default(false),
+    transports: jsonb("transports").$type<string[]>().notNull().default([]),
+    nickname: varchar("nickname", { length: 120 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  },
+  (table) => ({
+    credentialIdUnique: uniqueIndex("webauthn_credentials_credential_id_unique").on(table.credentialId),
+    userIndex: index("webauthn_credentials_user_idx").on(table.userId),
   }),
 );
 

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { trpc } from "../lib/trpc";
 import { startLogin } from "../auth";
+import { loginWithPasskey as loginWithPasskeyRequest, registerPasskey as registerPasskeyRequest } from "../webauthn";
 
 export function useAuth() {
   const utils = trpc.useUtils();
@@ -19,6 +20,15 @@ export function useAuth() {
     await utils.auth.me.invalidate();
   }, [logoutMutation, utils]);
 
+  const loginWithPasskey = useCallback(async () => {
+    await loginWithPasskeyRequest();
+    await utils.auth.me.invalidate();
+  }, [utils]);
+
+  const registerPasskey = useCallback(async () => {
+    await registerPasskeyRequest();
+  }, []);
+
   return useMemo(
     () => ({
       user: meQuery.data ?? null,
@@ -27,7 +37,18 @@ export function useAuth() {
       isAuthenticated: Boolean(meQuery.data),
       login: startLogin,
       logout,
+      loginWithPasskey,
+      registerPasskey,
     }),
-    [meQuery.data, meQuery.error, meQuery.isLoading, logout, logoutMutation.error, logoutMutation.isPending],
+    [
+      meQuery.data,
+      meQuery.error,
+      meQuery.isLoading,
+      logout,
+      logoutMutation.error,
+      logoutMutation.isPending,
+      loginWithPasskey,
+      registerPasskey,
+    ],
   );
 }

@@ -14,6 +14,7 @@ import { processDueInstallmentReminders } from "../modules/agency-billing/servic
 import { handleAgencySubscriptionWebhook } from "../modules/agency-billing/webhook";
 import { requireDb } from "./db";
 import { registerAuthRoutes } from "./auth";
+import { registerWebauthnRoutes } from "./webauthn";
 import { registerControlPlaneRoutes } from "./controlPlaneRouter";
 
 validateRuntimeConfig();
@@ -24,6 +25,7 @@ const app = express();
 const port = Number(process.env.PORT ?? 3000);
 
 registerAuthRoutes(app);
+registerWebauthnRoutes(app);
 
 app.post(
   "/api/payments/webhooks/stripe/:businessSlug",

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ArrowUpRight, Boxes, Database, Layers3, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Boxes, Database, Fingerprint, Layers3, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import { trpc } from "./lib/trpc";
+import { isPasskeySupported } from "./webauthn";
 import { EventDemoPanel } from "./components/events/EventDemoPanel";
 import { BookingDemoPanel } from "./components/bookings/BookingDemoPanel";
 import { ModuleAdminPanel } from "./components/admin/ModuleAdminPanel";
@@ -14,7 +15,27 @@ const presetLabels = ["Eventos", "Restaurante", "Retail", "Salón", "Gimnasio", 
 
 export default function App() {
   const [selectedPreset, setSelectedPreset] = useState("Eventos");
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const auth = useAuth();
+  const passkeySupported = isPasskeySupported();
+
+  const handlePasskeyLogin = async () => {
+    setPasskeyError(null);
+    try {
+      await auth.loginWithPasskey();
+    } catch (error) {
+      setPasskeyError(error instanceof Error ? error.message : "No se pudo iniciar sesión con Face ID.");
+    }
+  };
+
+  const handlePasskeyRegister = async () => {
+    setPasskeyError(null);
+    try {
+      await auth.registerPasskey();
+    } catch (error) {
+      setPasskeyError(error instanceof Error ? error.message : "No se pudo activar Face ID en este dispositivo.");
+    }
+  };
   const demoAdminPreview = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.search.includes("admin_modules=1"));
   const canSeeAdmin = auth.user?.platformRole === "platform_admin" || demoAdminPreview;
   const health = trpc.system.health.useQuery(undefined, { retry: false });
@@ -37,15 +58,38 @@ export default function App() {
           {auth.user ? (
             <>
               <span className="auth-user">{auth.user.name ?? auth.user.email ?? "Usuario"}</span>
+              {passkeySupported && (
+                <button
+                  type="button"
+                  className="auth-button auth-button-secondary"
+                  onClick={() => void handlePasskeyRegister()}
+                  disabled={auth.loading}
+                >
+                  <Fingerprint size={14} /> Activar Face ID en este dispositivo
+                </button>
+              )}
               <button type="button" className="auth-button" onClick={() => void auth.logout()} disabled={auth.loading}>
                 <LogOut size={14} /> Salir
               </button>
             </>
           ) : (
-            <button type="button" className="auth-button" onClick={auth.login} disabled={auth.loading}>
-              <LogIn size={14} /> Ingresar
-            </button>
+            <>
+              <button type="button" className="auth-button" onClick={auth.login} disabled={auth.loading}>
+                <LogIn size={14} /> Ingresar
+              </button>
+              {passkeySupported && (
+                <button
+                  type="button"
+                  className="auth-button auth-button-secondary"
+                  onClick={() => void handlePasskeyLogin()}
+                  disabled={auth.loading}
+                >
+                  <Fingerprint size={14} /> Face ID / Touch ID
+                </button>
+              )}
+            </>
           )}
+          {passkeyError && <span className="auth-error">{passkeyError}</span>}
         </div>
       </header>
 
