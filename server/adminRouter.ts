@@ -12,7 +12,9 @@ import {
   listBusinessesForAdmin,
   disableAdminModules,
   enableAdminModules,
+  toggleBusinessChecklistItem,
   updateAdminModuleSettings,
+  updateBusinessDetails,
 } from "./services/moduleAdmin";
 import { listBusinessMemberships, revokeBusinessMembership, setBusinessMembershipRole } from "./services/memberships";
 import { agencyBillingRouter } from "../modules/agency-billing/router";
@@ -34,9 +36,28 @@ export const adminRouter = router({
           slug: z.string().max(96).optional(),
           currency: z.string().length(3).optional(),
           timezone: z.string().max(64).optional(),
+          brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          logoUrl: z.string().max(500).optional(),
+          repoUrl: z.string().max(500).optional(),
+          vercelUrl: z.string().max(500).optional(),
+          notes: z.string().max(4000).optional(),
         }),
       )
       .mutation(({ ctx, input }) => createBusinessForAdmin(ctx.db, input)),
+    updateDetails: adminDatabaseProcedure
+      .input(
+        businessInput.extend({
+          brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
+          logoUrl: z.string().max(500).nullable().optional(),
+          repoUrl: z.string().max(500).nullable().optional(),
+          vercelUrl: z.string().max(500).nullable().optional(),
+          notes: z.string().max(4000).nullable().optional(),
+        }),
+      )
+      .mutation(({ ctx, input }) => updateBusinessDetails(ctx.db, input)),
+    toggleChecklistItem: adminDatabaseProcedure
+      .input(businessInput.extend({ key: z.string().min(1).max(120), done: z.boolean() }))
+      .mutation(({ ctx, input }) => toggleBusinessChecklistItem(ctx.db, input)),
   }),
   presets: router({
     list: adminDatabaseProcedure.query(() => BUSINESS_PRESETS),

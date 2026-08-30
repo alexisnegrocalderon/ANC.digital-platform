@@ -26,6 +26,15 @@ export const businesses = pgTable(
     timezone: varchar("timezone", { length: 64 }).notNull().default("America/Santiago"),
     currency: varchar("currency", { length: 3 }).notNull().default("CLP"),
     locale: varchar("locale", { length: 16 }).notNull().default("es-CL"),
+    brandColor: varchar("brand_color", { length: 7 }),
+    logoUrl: varchar("logo_url", { length: 500 }),
+    repoUrl: varchar("repo_url", { length: 500 }),
+    vercelUrl: varchar("vercel_url", { length: 500 }),
+    notes: text("notes"),
+    onboardingChecklist: jsonb("onboarding_checklist")
+      .$type<Array<{ key: string; label: string; done: boolean; doneAt: string | null }>>()
+      .notNull()
+      .default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

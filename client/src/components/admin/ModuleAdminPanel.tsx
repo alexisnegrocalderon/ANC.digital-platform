@@ -1,7 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronRight, LockKeyhole, Settings2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardList, LockKeyhole, Settings2, ShieldCheck } from "lucide-react";
 import type { ModuleKey } from "../../../../shared/module";
 import { trpc } from "../../lib/trpc";
+
+type OnboardingChecklistItem = { key: string; label: string; done: boolean; doneAt: string | null };
+
+type AdminBusiness = {
+  id: number;
+  slug: string;
+  name: string;
+  status: string;
+  timezone: string;
+  currency: string;
+  brandColor: string | null;
+  logoUrl: string | null;
+  repoUrl: string | null;
+  vercelUrl: string | null;
+  notes: string | null;
+  onboardingChecklist: OnboardingChecklistItem[];
+};
+
+function checklistProgress(business: AdminBusiness | undefined) {
+  const checklist = business?.onboardingChecklist ?? [];
+  const done = checklist.filter((item) => item.done).length;
+  return { done, total: checklist.length };
+}
 
 const categoryLabels: Record<string, string> = {
   offer: "Oferta y datos base",
@@ -24,13 +47,28 @@ export function ModuleAdminPanel() {
   const [selectedPresetKey, setSelectedPresetKey] = useState("events");
   const [selectedKeys, setSelectedKeys] = useState<ModuleKey[]>([]);
   const [newBusinessName, setNewBusinessName] = useState("");
+  const [newBusinessSlug, setNewBusinessSlug] = useState("");
+  const [newBusinessBrandColor, setNewBusinessBrandColor] = useState("#1a2b3c");
+  const [newBusinessLogoUrl, setNewBusinessLogoUrl] = useState("");
+  const [newBusinessNotes, setNewBusinessNotes] = useState("");
+  const [detailBusinessId, setDetailBusinessId] = useState<number | null>(null);
+  const [detailForm, setDetailForm] = useState({
+    brandColor: "",
+    logoUrl: "",
+    repoUrl: "",
+    vercelUrl: "",
+    notes: "",
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined" && selectedBusinessId !== null) {
       window.localStorage.setItem("anc-active-business-id", String(selectedBusinessId));
     }
   }, [selectedBusinessId]);
-  const businesses = trpc.admin.businesses.list.useQuery(undefined, { retry: false });
+  const businesses = trpc.admin.businesses.list.useQuery(undefined, { retry: false }) as {
+    data?: AdminBusiness[];
+    isLoading: boolean;
+  };
   const presets = trpc.admin.presets.list.useQuery(undefined, { retry: false });
   const utils = trpc.useUtils();
 
@@ -44,7 +82,23 @@ export function ModuleAdminPanel() {
     onSuccess: async (result) => {
       await utils.admin.businesses.list.invalidate();
       setNewBusinessName("");
+      setNewBusinessSlug("");
+      setNewBusinessBrandColor("#1a2b3c");
+      setNewBusinessLogoUrl("");
+      setNewBusinessNotes("");
       setSelectedBusinessId(result.id);
+    },
+  });
+
+  const updateDetails = trpc.admin.businesses.updateDetails.useMutation({
+    onSuccess: async () => {
+      await utils.admin.businesses.list.invalidate();
+    },
+  });
+
+  const toggleChecklistItem = trpc.admin.businesses.toggleChecklistItem.useMutation({
+    onSuccess: async () => {
+      await utils.admin.businesses.list.invalidate();
     },
   });
 
@@ -98,7 +152,44 @@ export function ModuleAdminPanel() {
 
   const handleCreateBusiness = () => {
     if (!newBusinessName.trim()) return;
-    createBusiness.mutate({ name: newBusinessName.trim() });
+    createBusiness.mutate({
+      name: newBusinessName.trim(),
+      slug: newBusinessSlug.trim() || undefined,
+      brandColor: newBusinessBrandColor || undefined,
+      logoUrl: newBusinessLogoUrl.trim() || undefined,
+      notes: newBusinessNotes.trim() || undefined,
+    });
+  };
+
+  const openBusinessDetail = (business: AdminBusiness) => {
+    if (detailBusinessId === business.id) {
+      setDetailBusinessId(null);
+      return;
+    }
+    setDetailBusinessId(business.id);
+    setDetailForm({
+      brandColor: business.brandColor ?? "",
+      logoUrl: business.logoUrl ?? "",
+      repoUrl: business.repoUrl ?? "",
+      vercelUrl: business.vercelUrl ?? "",
+      notes: business.notes ?? "",
+    });
+  };
+
+  const handleSaveDetails = () => {
+    if (detailBusinessId === null) return;
+    updateDetails.mutate({
+      businessId: detailBusinessId,
+      brandColor: detailForm.brandColor.trim() || null,
+      logoUrl: detailForm.logoUrl.trim() || null,
+      repoUrl: detailForm.repoUrl.trim() || null,
+      vercelUrl: detailForm.vercelUrl.trim() || null,
+      notes: detailForm.notes.trim() || null,
+    });
+  };
+
+  const handleToggleChecklistItem = (businessId: number, key: string, done: boolean) => {
+    toggleChecklistItem.mutate({ businessId, key, done });
   };
 
   const handleApplyPreset = () => {
@@ -181,6 +272,41 @@ export function ModuleAdminPanel() {
             onChange={(event) => setNewBusinessName(event.target.value)}
           />
         </label>
+        <label>
+          Slug (opcional)
+          <input
+            type="text"
+            placeholder="se autogenera si lo dejas vacío"
+            value={newBusinessSlug}
+            onChange={(event) => setNewBusinessSlug(event.target.value)}
+          />
+        </label>
+        <label>
+          Color de marca
+          <input
+            type="color"
+            value={newBusinessBrandColor}
+            onChange={(event) => setNewBusinessBrandColor(event.target.value)}
+          />
+        </label>
+        <label>
+          URL de logo (opcional)
+          <input
+            type="text"
+            placeholder="https://…"
+            value={newBusinessLogoUrl}
+            onChange={(event) => setNewBusinessLogoUrl(event.target.value)}
+          />
+        </label>
+        <label>
+          Notas (opcional)
+          <textarea
+            rows={2}
+            placeholder="Contexto del acuerdo, contactos, detalles…"
+            value={newBusinessNotes}
+            onChange={(event) => setNewBusinessNotes(event.target.value)}
+          />
+        </label>
         <button
           className="admin-primary-button"
           type="button"
@@ -194,6 +320,111 @@ export function ModuleAdminPanel() {
       {!businesses.isLoading && (businesses.data?.length ?? 0) === 0 ? (
         <p className="booking-muted">Todavía no hay negocios cargados — creá el primero arriba.</p>
       ) : null}
+
+      <div className="membership-list">
+        {(businesses.data ?? []).map((business) => {
+          const progress = checklistProgress(business);
+          const isOpen = detailBusinessId === business.id;
+          return (
+            <article className="membership-row" key={business.id}>
+              <div>
+                <strong>{business.name}</strong>
+                <span>
+                  {business.slug} · checklist {progress.done}/{progress.total}
+                  {business.brandColor ? (
+                    <>
+                      {" "}
+                      · <span style={{
+                        display: "inline-block",
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: business.brandColor,
+                        verticalAlign: "middle",
+                      }} />
+                    </>
+                  ) : null}
+                </span>
+              </div>
+              <button type="button" className="auth-button" onClick={() => openBusinessDetail(business)}>
+                <ClipboardList size={14} /> {isOpen ? "Cerrar detalle" : "Detalle"}
+              </button>
+              {isOpen ? (
+                <div className="admin-control-bar" style={{ width: "100%" }}>
+                  <label>
+                    Color de marca
+                    <input
+                      type="color"
+                      value={detailForm.brandColor || "#1a2b3c"}
+                      onChange={(event) => setDetailForm((form) => ({ ...form, brandColor: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    URL de logo
+                    <input
+                      type="text"
+                      value={detailForm.logoUrl}
+                      onChange={(event) => setDetailForm((form) => ({ ...form, logoUrl: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    URL del repo
+                    <input
+                      type="text"
+                      value={detailForm.repoUrl}
+                      onChange={(event) => setDetailForm((form) => ({ ...form, repoUrl: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    URL de Vercel
+                    <input
+                      type="text"
+                      value={detailForm.vercelUrl}
+                      onChange={(event) => setDetailForm((form) => ({ ...form, vercelUrl: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    Notas
+                    <textarea
+                      rows={2}
+                      value={detailForm.notes}
+                      onChange={(event) => setDetailForm((form) => ({ ...form, notes: event.target.value }))}
+                    />
+                  </label>
+                  <button
+                    className="admin-primary-button"
+                    type="button"
+                    disabled={updateDetails.isPending}
+                    onClick={handleSaveDetails}
+                  >
+                    {updateDetails.isPending ? "Guardando…" : "Guardar"}
+                  </button>
+                  {updateDetails.error ? (
+                    <p className="admin-error"><AlertTriangle size={15} /> {updateDetails.error.message}</p>
+                  ) : null}
+
+                  <div className="admin-summary" style={{ width: "100%", flexDirection: "column", alignItems: "flex-start" }}>
+                    {(business.onboardingChecklist ?? []).map((item) => (
+                      <label key={item.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input
+                          type="checkbox"
+                          checked={item.done}
+                          disabled={toggleChecklistItem.isPending}
+                          onChange={(event) => handleToggleChecklistItem(business.id, item.key, event.target.checked)}
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                  {toggleChecklistItem.error ? (
+                    <p className="admin-error"><AlertTriangle size={15} /> {toggleChecklistItem.error.message}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
 
       {applyPreset.error ? <p className="admin-error"><AlertTriangle size={15} /> {applyPreset.error.message}</p> : null}
       {enable.error ? <p className="admin-error"><AlertTriangle size={15} /> {enable.error.message}</p> : null}

@@ -16,6 +16,24 @@ import { disableBusinessModules, enableBusinessModules } from "./businessModules
 
 const MATURITY_BLOCKED = new Set(["planned", "contract-ready", "scaffolded"]);
 
+export type OnboardingChecklistItem = {
+  key: string;
+  label: string;
+  done: boolean;
+  doneAt: string | null;
+};
+
+export const DEFAULT_ONBOARDING_CHECKLIST: OnboardingChecklistItem[] = [
+  { key: "repo_created", label: "Repo creado desde la plantilla", done: false, doneAt: null },
+  { key: "vercel_connected", label: "Proyecto Vercel conectado", done: false, doneAt: null },
+  { key: "database_created", label: "Base de datos Neon creada", done: false, doneAt: null },
+  { key: "migrations_run", label: "Migraciones corridas", done: false, doneAt: null },
+  { key: "modules_configured", label: "Módulos activados", done: false, doneAt: null },
+  { key: "branding_applied", label: "Marca y colores aplicados al sitio", done: false, doneAt: null },
+  { key: "domain_connected", label: "Dominio conectado", done: false, doneAt: null },
+  { key: "delivered", label: "Entregado al cliente", done: false, doneAt: null },
+];
+
 type ModuleAdminStatus = "active" | "pending_setup" | "blocked" | "error" | "disabled";
 
 function settingsConfigured(settings: Record<string, unknown>, checklist: string[]) {
@@ -45,6 +63,12 @@ export async function listBusinessesForAdmin(db: any) {
       status: businesses.status,
       timezone: businesses.timezone,
       currency: businesses.currency,
+      brandColor: businesses.brandColor,
+      logoUrl: businesses.logoUrl,
+      repoUrl: businesses.repoUrl,
+      vercelUrl: businesses.vercelUrl,
+      notes: businesses.notes,
+      onboardingChecklist: businesses.onboardingChecklist,
     })
     .from(businesses)
     .orderBy(businesses.name);
@@ -62,7 +86,17 @@ function slugify(name: string) {
 
 export async function createBusinessForAdmin(
   db: any,
-  input: { name: string; slug?: string; currency?: string; timezone?: string },
+  input: {
+    name: string;
+    slug?: string;
+    currency?: string;
+    timezone?: string;
+    brandColor?: string;
+    logoUrl?: string;
+    repoUrl?: string;
+    vercelUrl?: string;
+    notes?: string;
+  },
 ) {
   const name = input.name.trim();
   if (!name) throw new Error("El nombre del negocio es obligatorio.");
@@ -84,9 +118,72 @@ export async function createBusinessForAdmin(
       slug,
       currency: input.currency?.trim() || undefined,
       timezone: input.timezone?.trim() || undefined,
+      brandColor: input.brandColor?.trim() || undefined,
+      logoUrl: input.logoUrl?.trim() || undefined,
+      repoUrl: input.repoUrl?.trim() || undefined,
+      vercelUrl: input.vercelUrl?.trim() || undefined,
+      notes: input.notes?.trim() || undefined,
+      onboardingChecklist: DEFAULT_ONBOARDING_CHECKLIST.map((item) => ({ ...item })),
     })
     .returning();
   return row;
+}
+
+export async function updateBusinessDetails(
+  db: any,
+  input: {
+    businessId: number;
+    brandColor?: string | null;
+    logoUrl?: string | null;
+    repoUrl?: string | null;
+    vercelUrl?: string | null;
+    notes?: string | null;
+  },
+) {
+  const { businessId, ...fields } = input;
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  if ("brandColor" in fields) updates.brandColor = fields.brandColor?.trim() || null;
+  if ("logoUrl" in fields) updates.logoUrl = fields.logoUrl?.trim() || null;
+  if ("repoUrl" in fields) updates.repoUrl = fields.repoUrl?.trim() || null;
+  if ("vercelUrl" in fields) updates.vercelUrl = fields.vercelUrl?.trim() || null;
+  if ("notes" in fields) updates.notes = fields.notes?.trim() || null;
+
+  const [row] = await db
+    .update(businesses)
+    .set(updates)
+    .where(eq(businesses.id, businessId))
+    .returning();
+  if (!row) throw new Error(`Business ${businessId} not found.`);
+  return row;
+}
+
+export async function toggleBusinessChecklistItem(
+  db: any,
+  input: { businessId: number; key: string; done: boolean },
+) {
+  const [row] = await db.select().from(businesses).where(eq(businesses.id, input.businessId)).limit(1);
+  if (!row) throw new Error(`Business ${input.businessId} not found.`);
+
+  const checklist: OnboardingChecklistItem[] = Array.isArray(row.onboardingChecklist)
+    ? row.onboardingChecklist
+    : [];
+  const index = checklist.findIndex((item) => item.key === input.key);
+  if (index === -1) {
+    throw new Error(`Checklist item "${input.key}" not found for business ${input.businessId}.`);
+  }
+
+  const updatedChecklist = checklist.map((item, itemIndex) =>
+    itemIndex === index
+      ? { ...item, done: input.done, doneAt: input.done ? new Date().toISOString() : null }
+      : item,
+  );
+
+  const [updated] = await db
+    .update(businesses)
+    .set({ onboardingChecklist: updatedChecklist, updatedAt: new Date() })
+    .where(eq(businesses.id, input.businessId))
+    .returning();
+  return updated;
 }
 
 export async function getAdminModuleCatalog(db: any, businessId?: number) {
