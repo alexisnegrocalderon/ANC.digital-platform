@@ -112,7 +112,10 @@ const publicPath = process.env.VERCEL
     // for both — the server bundle output is intentionally kept out of `dist/` so it can never
     // collide with (or be served as) a static asset alongside the Vite build.
     path.resolve(__dirname, "../dist/public");
-mount.use(express.static(publicPath));
+// `redirect: false` avoids express.static's own 301-to-add-trailing-slash for the mount root
+// (e.g. "/admin" -> "/admin/") — under the ancdigital.cl proxy that second hop doesn't resolve
+// correctly, so we just serve the SPA directly via the catch-all below instead of redirecting.
+mount.use(express.static(publicPath, { redirect: false }));
 mount.get("*", (_req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
