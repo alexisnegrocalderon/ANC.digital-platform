@@ -70,25 +70,24 @@ export function LoginScreen() {
           </button>
         </form>
 
-        <div className="login-divider">
-          <span>o continuá con</span>
-        </div>
+        {passkeySupported && (
+          <>
+            <div className="login-divider">
+              <span>o continuá con</span>
+            </div>
 
-        <div className="login-alt-actions">
-          <button type="button" className="auth-button login-alt-button" onClick={auth.login} disabled={auth.loading}>
-            Manus
-          </button>
-          {passkeySupported && (
-            <button
-              type="button"
-              className="auth-button login-alt-button"
-              onClick={() => void handlePasskeyLogin()}
-              disabled={auth.loading}
-            >
-              <Fingerprint size={15} /> Face ID / Touch ID
-            </button>
-          )}
-        </div>
+            <div className="login-alt-actions">
+              <button
+                type="button"
+                className="auth-button login-alt-button"
+                onClick={() => void handlePasskeyLogin()}
+                disabled={auth.loading}
+              >
+                <Fingerprint size={15} /> Face ID / Touch ID
+              </button>
+            </div>
+          </>
+        )}
         {passkeyError && <p className="setup-error">{passkeyError}</p>}
       </div>
     </section>
