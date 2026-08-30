@@ -122,14 +122,37 @@ export const businessAdminProcedure = businessDatabaseProcedure.use(({ ctx, next
   return next({ ctx: { ...ctx, businessRole: ctx.businessRole } });
 });
 
-export const platformAdminProcedure = databaseProcedure.use(({ ctx, next }) => {
-  const developmentDemo =
-    process.env.NODE_ENV !== "production" && process.env.DEV_BUSINESS_CONTEXT_ENABLED === "true";
-  if (!developmentDemo && (!ctx.user || ctx.user.platformRole !== "platform_admin")) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Platform administrator permission required." });
+// Unwraps a driver-level cause (e.g. the actual Postgres error behind drizzle-orm's generic
+// "Failed query: ..." message) so it reaches the admin UI instead of being silently dropped.
+// Only applied to platform_admin-gated procedures below — the sole admin is trusted to see it.
+function describeError(error: unknown): string {
+  if (error instanceof Error) {
+    const cause = (error as { cause?: unknown }).cause;
+    if (cause instanceof Error && cause.message && cause.message !== error.message) {
+      return `${error.message} — ${cause.message}`;
+    }
+    return error.message;
   }
-  return next({ ctx: { ...ctx, user: ctx.user } });
-});
+  return "Unknown error.";
+}
+
+export const platformAdminProcedure = databaseProcedure
+  .use(({ ctx, next }) => {
+    const developmentDemo =
+      process.env.NODE_ENV !== "production" && process.env.DEV_BUSINESS_CONTEXT_ENABLED === "true";
+    if (!developmentDemo && (!ctx.user || ctx.user.platformRole !== "platform_admin")) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Platform administrator permission required." });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  })
+  .use(async ({ next }) => {
+    try {
+      return await next();
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: describeError(error) });
+    }
+  });
 
 // Compatibility export used by the module admin router.
 export const adminDatabaseProcedure = platformAdminProcedure;
