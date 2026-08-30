@@ -265,7 +265,7 @@ export async function enableAdminModules(
   const blocked = plan.ordered.filter((key) => MATURITY_BLOCKED.has(MODULE_MANIFESTS[key].maturity));
   if (blocked.length > 0) {
     throw new ModuleActivationError(
-      `Modules are not activatable until their runtime is implemented: ${blocked.join(", ")}.`,
+      `Estos módulos todavía no están implementados y no se pueden activar para un cliente real: ${blocked.join(", ")}.`,
     );
   }
   return enableBusinessModules(db, businessId, plan.ordered, actorUserId, idempotencyKey);
