@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Sparkles } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { useSelectedBusiness } from "../../hooks/useSelectedBusiness";
 
@@ -37,11 +37,12 @@ export function NewClientWizard() {
   };
 
   return (
-    <section className="admin-modules-section" id="new-client-wizard">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">01 / NUEVO CLIENTE</p>
-          <h2>Empieza acá: crea el registro del cliente.</h2>
+    <section className="admin-panel" id="new-client-wizard">
+      <div className="admin-panel-head">
+        <div className="admin-panel-head-copy">
+          <span className="admin-panel-head-icon"><Sparkles size={18} /></span>
+          <p className="admin-eyebrow">01 · Nuevo cliente</p>
+          <h2>Empieza acá: crea el registro del cliente</h2>
         </div>
         <p>
           Nombre, slug, marca y notas. Al crearlo se siembra automáticamente un checklist de onboarding de 8 pasos.

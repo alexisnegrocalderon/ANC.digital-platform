@@ -1,4 +1,4 @@
-import { ShieldCheck, UserMinus, UserRoundCog } from "lucide-react";
+import { ShieldCheck, UserMinus, UserRoundCog, Users } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { BUSINESS_ROLE_KEYS, type BusinessRole } from "../../../../shared/auth";
 import { useSelectedBusiness } from "../../hooks/useSelectedBusiness";
@@ -26,15 +26,15 @@ export function MembershipAdminPanel() {
   });
 
   return (
-    <section className="admin-memberships-section" id="membership-admin">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">05 / MEMBERSHIPS & ROLES</p>
-          <h2>Acceso por negocio, no por confianza en el cliente.</h2>
+    <section className="admin-panel" id="membership-admin">
+      <div className="admin-panel-head">
+        <div className="admin-panel-head-copy">
+          <span className="admin-panel-head-icon"><Users size={18} /></span>
+          <p className="admin-eyebrow">03 · Accesos y roles</p>
+          <h2>Acceso por negocio, no por confianza en el cliente</h2>
         </div>
         <p>
-          Cada usuario entra por OAuth y solo recibe acceso a los negocios donde tiene una membership activa.
-          Los cambios quedan auditados.
+          Cada usuario entra por OAuth y solo recibe acceso a los negocios donde tiene una membership activa. Los cambios quedan auditados.
         </p>
       </div>
 

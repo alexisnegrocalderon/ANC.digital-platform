@@ -26,14 +26,14 @@ function BusinessSelector() {
 
   if (!businesses.isLoading && (businesses.data?.length ?? 0) === 0) {
     return (
-      <section className="admin-modules-section" id="business-selector">
+      <section className="admin-panel" id="business-selector">
         <p className="booking-muted">Todavía no hay clientes cargados — usa el wizard de arriba para crear el primero.</p>
       </section>
     );
   }
 
   return (
-    <section className="admin-modules-section" id="business-selector">
+    <section className="admin-panel" id="business-selector">
       <div className="admin-control-bar">
         <label>
           Cliente / negocio
@@ -52,14 +52,27 @@ function BusinessSelector() {
   );
 }
 
-function AdminDashboard() {
+function AdminDashboard({ name, online }: { name: string; online: boolean }) {
+  const today = new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" });
   return (
     <SelectedBusinessProvider>
-      <NewClientWizard />
-      <BusinessSelector />
-      <ModuleAdminPanel />
-      <MembershipAdminPanel />
-      <BillingAdminPanel />
+      <div className="dashboard-shell">
+        <div className="dashboard-header">
+          <div>
+            <h1>Hola, {name.split(" ")[0]}.</h1>
+            <p>Acá administrás cada plataforma de cliente: onboarding, módulos, accesos y cobros.</p>
+          </div>
+          <span className="dashboard-header-meta">
+            <span className={online ? "dashboard-status-dot" : "dashboard-status-dot is-offline"} />
+            {online ? "Core online" : "Core en espera"} · {today}
+          </span>
+        </div>
+        <NewClientWizard />
+        <BusinessSelector />
+        <ModuleAdminPanel />
+        <MembershipAdminPanel />
+        <BillingAdminPanel />
+      </div>
     </SelectedBusinessProvider>
   );
 }
@@ -152,31 +165,29 @@ export default function App() {
       </header>
 
       {canSeeAdmin ? (
-        <AdminDashboard />
+        <AdminDashboard name={auth.user?.name ?? auth.user?.email ?? "Alexis"} online={Boolean(health.data?.ok)} />
       ) : auth.user ? (
-        <section className="admin-modules-section" id="access-restricted">
-          <div className="section-heading">
-            <div>
-              <h2>Acceso restringido</h2>
-            </div>
+        <section className="dashboard-gate" id="access-restricted">
+          <div className="dashboard-gate-card">
+            <h2>Acceso restringido</h2>
             <p>Tu cuenta no tiene permisos de administración de esta plataforma.</p>
           </div>
         </section>
       ) : (
-        <section className="admin-modules-section" id="login-gate">
-          <div className="section-heading">
-            <div>
-              <h2>Iniciá sesión para continuar</h2>
-            </div>
+        <section className="dashboard-gate" id="login-gate">
+          <div className="dashboard-gate-card">
+            <h2>Iniciá sesión para continuar</h2>
             <p>Usá las opciones de acceso de arriba (contraseña, Face ID/Touch ID o Manus).</p>
           </div>
         </section>
       )}
 
-      <footer className="footer">
-        <span>ANC Platform / owned digital infrastructure</span>
-        <span>{health.error ? "API pendiente de iniciar" : "Ready for the next module"}</span>
-      </footer>
+      {canSeeAdmin ? null : (
+        <footer className="footer">
+          <span>ANC Platform / owned digital infrastructure</span>
+          <span>{health.error ? "API pendiente de iniciar" : "Ready for the next module"}</span>
+        </footer>
+      )}
     </main>
   );
 }

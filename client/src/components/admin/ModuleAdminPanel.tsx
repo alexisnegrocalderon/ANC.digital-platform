@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardList, LockKeyhole, Settings2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardList, LayoutGrid, LockKeyhole, Settings2, ShieldCheck } from "lucide-react";
 import type { ModuleKey } from "../../../../shared/module";
 import { trpc } from "../../lib/trpc";
 import { useSelectedBusiness } from "../../hooks/useSelectedBusiness";
@@ -182,14 +182,15 @@ export function ModuleAdminPanel() {
   };
 
   return (
-    <section className="admin-modules-section" id="module-admin">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">04 / PLATFORM ADMIN</p>
-          <h2>Activa capacidades sin crear otro proyecto.</h2>
+    <section className="admin-panel" id="module-admin">
+      <div className="admin-panel-head">
+        <div className="admin-panel-head-copy">
+          <span className="admin-panel-head-icon"><LayoutGrid size={18} /></span>
+          <p className="admin-eyebrow">02 · Clientes y módulos</p>
+          <h2>Activa capacidades sin crear otro proyecto</h2>
         </div>
         <p>
-          Selecciona un negocio, revisa el plan de dependencias y activa solo lo que el cliente necesita. El catálogo distingue entre runtime disponible y módulo todavía planificado.
+          Elegí un negocio, revisá el plan de dependencias y activá solo lo que ese cliente necesita.
         </p>
       </div>
 
@@ -216,25 +217,22 @@ export function ModuleAdminPanel() {
         {(businesses.data ?? []).map((business) => {
           const progress = checklistProgress(business);
           const isOpen = detailBusinessId === business.id;
+          const percent = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
           return (
             <article className="membership-row" key={business.id}>
               <div>
-                <strong>{business.name}</strong>
-                <span>
-                  {business.slug} · checklist {progress.done}/{progress.total}
+                <strong>
                   {business.brandColor ? (
-                    <>
-                      {" "}
-                      · <span style={{
-                        display: "inline-block",
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        background: business.brandColor,
-                        verticalAlign: "middle",
-                      }} />
-                    </>
+                    <span className="client-swatch" style={{ background: business.brandColor, marginRight: 8 }} />
                   ) : null}
+                  {business.name}
+                </strong>
+                <span className="client-progress">
+                  {business.slug} ·
+                  <span className="client-progress-track">
+                    <span className="client-progress-fill" style={{ width: `${percent}%` }} />
+                  </span>
+                  {progress.done}/{progress.total}
                 </span>
               </div>
               <button type="button" className="auth-button" onClick={() => openBusinessDetail(business)}>

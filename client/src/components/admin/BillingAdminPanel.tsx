@@ -126,15 +126,15 @@ export function BillingAdminPanel() {
   };
 
   return (
-    <section className="admin-modules-section" id="billing-admin">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">06 / AGENCY BILLING</p>
-          <h2>Lo que cada cliente te debe, ordenado y con recordatorios.</h2>
+    <section className="admin-panel" id="billing-admin">
+      <div className="admin-panel-head">
+        <div className="admin-panel-head-copy">
+          <span className="admin-panel-head-icon"><Receipt size={18} /></span>
+          <p className="admin-eyebrow">04 · Cobros a clientes</p>
+          <h2>Lo que cada cliente te debe, ordenado y con recordatorios</h2>
         </div>
         <p>
-          Un acuerdo por cliente, cuotas con fecha y monto editables a mano, y recordatorios automáticos por mail.
-          El registro manual siempre manda.
+          Un acuerdo por cliente, cuotas con fecha y monto editables a mano, y recordatorios automáticos por mail. El registro manual siempre manda.
         </p>
       </div>
 
