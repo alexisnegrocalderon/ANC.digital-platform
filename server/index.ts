@@ -99,9 +99,11 @@ const publicPath = process.env.VERCEL
     // function executes with `process.cwd()` set to that root — not to the bundled file's
     // own directory, so the __dirname-based logic below doesn't resolve correctly here.
     path.resolve(process.cwd(), "dist/public")
-  : process.env.NODE_ENV === "production"
-    ? path.resolve(__dirname, "public")
-    : path.resolve(__dirname, "../dist/public");
+  : // Both dev (`server/index.ts` via tsx) and the built server (`server-dist/index.js`)
+    // sit one directory above the repo root's `dist/public`, so the same relative path works
+    // for both — the server bundle output is intentionally kept out of `dist/` so it can never
+    // collide with (or be served as) a static asset alongside the Vite build.
+    path.resolve(__dirname, "../dist/public");
 app.use(express.static(publicPath));
 app.get("*", (_req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
