@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Fingerprint, LogIn, LogOut } from "lucide-react";
+import { Fingerprint, LogOut } from "lucide-react";
 import { trpc } from "./lib/trpc";
 import { isPasskeySupported } from "./webauthn";
 import { NewClientWizard } from "./components/admin/NewClientWizard";
 import { ModuleAdminPanel } from "./components/admin/ModuleAdminPanel";
 import { MembershipAdminPanel } from "./components/admin/MembershipAdminPanel";
 import { BillingAdminPanel } from "./components/admin/BillingAdminPanel";
-import { PasswordLoginForm } from "./components/auth/PasswordLoginForm";
+import { LoginScreen } from "./components/auth/LoginScreen";
 import { SetupPage } from "./components/auth/SetupPage";
 import { ResetPage } from "./components/auth/ResetPage";
 import { useAuth } from "./hooks/useAuth";
@@ -86,15 +86,6 @@ export default function App() {
   const auth = useAuth();
   const passkeySupported = isPasskeySupported();
 
-  const handlePasskeyLogin = async () => {
-    setPasskeyError(null);
-    try {
-      await auth.loginWithPasskey();
-    } catch (error) {
-      setPasskeyError(error instanceof Error ? error.message : "No se pudo iniciar sesión con Face ID.");
-    }
-  };
-
   const handlePasskeyRegister = async () => {
     setPasskeyError(null);
     try {
@@ -126,49 +117,25 @@ export default function App() {
         <span className="topbar-status">
           {health.data?.ok ? "CORE ONLINE" : "CORE EN ESPERA"}
         </span>
-        <div className="auth-actions">
-          {auth.user ? (
-            <>
-              <span className="auth-user">{auth.user.name ?? auth.user.email ?? "Usuario"}</span>
-              {passkeySupported && (
-                <button
-                  type="button"
-                  className="auth-button auth-button-secondary"
-                  onClick={() => void handlePasskeyRegister()}
-                  disabled={auth.loading}
-                >
-                  <Fingerprint size={14} /> Activar Face ID en este dispositivo
-                </button>
-              )}
-              <button type="button" className="auth-button" onClick={() => void auth.logout()} disabled={auth.loading}>
-                <LogOut size={14} /> Salir
-              </button>
-            </>
-          ) : (
-            <>
-              <PasswordLoginForm />
+        {auth.user ? (
+          <div className="auth-actions">
+            <span className="auth-user">{auth.user.name ?? auth.user.email ?? "Usuario"}</span>
+            {passkeySupported && (
               <button
                 type="button"
                 className="auth-button auth-button-secondary"
-                onClick={auth.login}
+                onClick={() => void handlePasskeyRegister()}
                 disabled={auth.loading}
               >
-                <LogIn size={14} /> Ingresar con Manus
+                <Fingerprint size={14} /> Activar Face ID en este dispositivo
               </button>
-              {passkeySupported && (
-                <button
-                  type="button"
-                  className="auth-button auth-button-secondary"
-                  onClick={() => void handlePasskeyLogin()}
-                  disabled={auth.loading}
-                >
-                  <Fingerprint size={14} /> Face ID / Touch ID
-                </button>
-              )}
-            </>
-          )}
-          {passkeyError && <span className="auth-error">{passkeyError}</span>}
-        </div>
+            )}
+            <button type="button" className="auth-button" onClick={() => void auth.logout()} disabled={auth.loading}>
+              <LogOut size={14} /> Salir
+            </button>
+            {passkeyError && <span className="auth-error">{passkeyError}</span>}
+          </div>
+        ) : null}
       </header>
 
       {canSeeAdmin ? (
@@ -181,12 +148,7 @@ export default function App() {
           </div>
         </section>
       ) : (
-        <section className="dashboard-gate" id="login-gate">
-          <div className="dashboard-gate-card">
-            <h2>Iniciá sesión para continuar</h2>
-            <p>Usá las opciones de acceso de arriba (contraseña, Face ID/Touch ID o Manus).</p>
-          </div>
-        </section>
+        <LoginScreen />
       )}
 
       {canSeeAdmin ? null : (
