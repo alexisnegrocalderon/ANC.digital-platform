@@ -26,10 +26,14 @@ function getRelyingParty() {
   const raw = process.env.PUBLIC_APP_URL?.trim();
   if (!raw) throw new Error("PUBLIC_APP_URL is required for WebAuthn.");
   const url = new URL(raw);
+  // Accept both the apex and "www." host: Vercel/DNS may redirect one to the other (e.g.
+  // ancdigital.cl -> www.ancdigital.cl), so the browser's actual origin during the WebAuthn
+  // ceremony can differ from whichever variant PUBLIC_APP_URL happens to be set to.
+  const bareHost = url.hostname.replace(/^www\./, "");
   return {
-    rpID: url.hostname,
+    rpID: bareHost,
     rpName: "ANC Platform",
-    expectedOrigin: url.origin,
+    expectedOrigin: [`${url.protocol}//${bareHost}`, `${url.protocol}//www.${bareHost}`],
   };
 }
 

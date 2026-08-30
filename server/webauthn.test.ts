@@ -183,7 +183,7 @@ describe("POST /api/webauthn/register/verify", () => {
     expect(verifyRegistrationResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         expectedChallenge: "reg-challenge",
-        expectedOrigin: "https://admin.ancdigital.cl",
+        expectedOrigin: ["https://admin.ancdigital.cl", "https://www.admin.ancdigital.cl"],
         expectedRPID: "admin.ancdigital.cl",
       }),
     );
