@@ -6,10 +6,11 @@ import {
   orderItems,
   orders,
   paymentAttempts,
+  paymentProviderAccounts,
   ticketTypes,
 } from "../../drizzle/schema";
 import { PAYMENT_PROVIDERS, type PaymentProvider } from "../../shared/payment";
-import { moduleEnabledProcedure, router } from "../../server/trpc";
+import { businessAdminProcedure, moduleEnabledProcedure, router } from "../../server/trpc";
 import {
   createOrReusePaymentAttempt,
   resolveProviderCredentials,
@@ -154,4 +155,27 @@ export const paymentsRouter = router({
       }
       return upsertProviderCredentials(ctx.db, ctx.businessId, input.provider, input);
     }),
+
+  // Read-only connection status for the "Conectar Mercado Pago" panel. Never returns the
+  // stored access/refresh tokens — only whether an account is connected and, for the OAuth
+  // marketplace flow, the seller id MercadoPago assigned (no commission figure is ever
+  // exposed here; that lives only in the MERCADOPAGO_MARKETPLACE_COMMISSION_BPS env var).
+  mercadoPagoConnectionStatus: businessAdminProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db
+      .select({
+        status: paymentProviderAccounts.status,
+        sellerUserId: paymentProviderAccounts.sellerUserId,
+        publicKey: paymentProviderAccounts.publicKey,
+      })
+      .from(paymentProviderAccounts)
+      .where(
+        and(eq(paymentProviderAccounts.businessId, ctx.businessId), eq(paymentProviderAccounts.provider, "mercadopago")),
+      )
+      .limit(1);
+    const account = rows[0];
+    return {
+      connected: Boolean(account && account.status === "active" && account.sellerUserId),
+      sellerUserId: account?.sellerUserId ?? null,
+    };
+  }),
 });

@@ -2,6 +2,7 @@ export const COOKIE_NAME = "anc_session";
 export const ONE_YEAR_MS = 1000 * 60 * 60 * 24 * 365;
 export const AXIOS_TIMEOUT_MS = 30_000;
 export const OAUTH_STATE_COOKIE = "__Host-oauth_state";
+export const MERCADOPAGO_OAUTH_STATE_COOKIE = "__Host-mp_oauth_state";
 export const WEBAUTHN_CHALLENGE_COOKIE = "__Host-webauthn_challenge";
 export const UNAUTHED_ERR_MSG = "Authentication required.";
 export const NOT_ADMIN_ERR_MSG = "Administrative permission required.";

@@ -15,6 +15,7 @@ import { registerAuthRoutes } from "./auth";
 import { registerWebauthnRoutes } from "./webauthn";
 import { registerPasswordAuthRoutes } from "./passwordAuth";
 import { registerControlPlaneRoutes } from "./controlPlaneRouter";
+import { registerMercadoPagoConnectRoutes } from "./mercadoPagoConnect";
 
 validateRuntimeConfig();
 
@@ -26,6 +27,7 @@ const port = Number(process.env.PORT ?? 3000);
 registerAuthRoutes(app);
 registerWebauthnRoutes(app);
 registerPasswordAuthRoutes(app);
+registerMercadoPagoConnectRoutes(app);
 
 app.post(
   "/api/payments/webhooks/stripe/:businessSlug",

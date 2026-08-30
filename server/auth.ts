@@ -56,7 +56,7 @@ function getQueryParam(req: Request, key: string) {
   return typeof value === "string" ? value : undefined;
 }
 
-function isSecureRequest(req: Request) {
+export function isSecureRequest(req: Request) {
   if (req.protocol === "https") return true;
   const forwardedProto = req.headers["x-forwarded-proto"];
   const values = Array.isArray(forwardedProto) ? forwardedProto : forwardedProto?.split(",") ?? [];

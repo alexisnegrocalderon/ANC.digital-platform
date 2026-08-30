@@ -304,6 +304,7 @@ export async function markWebhookEvent(
 
 import { paymentProviderAccounts } from "../../drizzle/schema";
 import { decryptPaymentSecret, encryptPaymentSecret } from "../../server/services/paymentSecrets";
+import { ensureFreshMercadoPagoToken } from "../../server/mercadoPagoConnect";
 import type { ProviderCredentials } from "./providers";
 
 export async function upsertProviderCredentials(
@@ -362,12 +363,31 @@ export async function resolveProviderCredentials(
     )
     .limit(1);
   const account = configured[0];
-  if (account?.encryptedAccessToken && account.encryptedWebhookSecret) {
-    return {
-      accessToken: decryptPaymentSecret(account.encryptedAccessToken),
-      webhookSecret: decryptPaymentSecret(account.encryptedWebhookSecret),
-      publicKey: account.publicKey,
-    };
+  if (account?.encryptedAccessToken) {
+    // A MercadoPago account connected through marketplace OAuth (server/mercadoPagoConnect.ts)
+    // carries a refresh token and seller id and has no manually-set webhook secret required —
+    // its access token must always be refreshed just-in-time instead of trusted as-is.
+    const isMercadoPagoOAuthAccount =
+      provider === "mercadopago" && Boolean(account.sellerUserId) && Boolean(account.encryptedRefreshToken);
+    if (isMercadoPagoOAuthAccount) {
+      const accessToken = await ensureFreshMercadoPagoToken(db, account);
+      return {
+        accessToken,
+        webhookSecret: account.encryptedWebhookSecret
+          ? decryptPaymentSecret(account.encryptedWebhookSecret)
+          : (getGlobalCredentials(provider)?.webhookSecret ?? ""),
+        publicKey: account.publicKey,
+        sellerUserId: account.sellerUserId,
+      };
+    }
+
+    if (account.encryptedWebhookSecret) {
+      return {
+        accessToken: decryptPaymentSecret(account.encryptedAccessToken),
+        webhookSecret: decryptPaymentSecret(account.encryptedWebhookSecret),
+        publicKey: account.publicKey,
+      };
+    }
   }
 
   const global = getGlobalCredentials(provider);

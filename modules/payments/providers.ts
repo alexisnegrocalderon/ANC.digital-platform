@@ -10,7 +10,17 @@ export type ProviderCredentials = {
   accessToken: string;
   webhookSecret: string;
   publicKey?: string | null;
+  // Present only for a MercadoPago account connected through marketplace OAuth (see
+  // server/mercadoPagoConnect.ts). Its presence is the signal `createCheckout` uses to
+  // split off ANC's marketplace commission — it is never set for the legacy manual
+  // access-token flow, which behaves exactly as before.
+  sellerUserId?: string | null;
 };
+
+function mercadoPagoMarketplaceFeeCents(amountCents: number) {
+  const commissionBps = Number(process.env.MERCADOPAGO_MARKETPLACE_COMMISSION_BPS ?? 150);
+  return Math.round((amountCents * commissionBps) / 10000);
+}
 
 export type PaymentAdapter = {
   provider: PaymentProvider;
@@ -213,6 +223,14 @@ const mercadoPagoAdapter: PaymentAdapter = {
   async createCheckout(input, credentials) {
     const publicUrl = requireHttpUrl(process.env.PUBLIC_APP_URL ?? "", "PUBLIC_APP_URL");
     const notificationUrl = `${publicUrl}/api/payments/webhooks/mercadopago/${encodeURIComponent(input.businessSlug)}`;
+    // A seller connected via marketplace OAuth (see server/mercadoPagoConnect.ts) gets its
+    // access token used here instead of a manually pasted one, and MercadoPago splits an
+    // automatic commission to ANC's own account via `marketplace_fee`. Accounts still on the
+    // legacy manual-token flow have no `sellerUserId` and this block is skipped entirely, so
+    // that path is byte-for-byte unchanged.
+    const marketplaceFee = credentials.sellerUserId
+      ? mercadoPagoMarketplaceFeeCents(input.amountCents)
+      : null;
     const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
@@ -235,6 +253,7 @@ const mercadoPagoAdapter: PaymentAdapter = {
           pending: `${publicUrl}/?payment=pending`,
         },
         auto_return: "approved",
+        ...(marketplaceFee !== null ? { marketplace_fee: marketplaceFee } : {}),
       }),
     });
     const payload = await readJsonResponse(response);
