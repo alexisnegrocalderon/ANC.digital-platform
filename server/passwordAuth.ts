@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import express from "express";
-import type { Express, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { RouteTarget } from "./routeTarget";
 import { eq } from "drizzle-orm";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { users } from "../drizzle/schema";
@@ -22,7 +23,7 @@ async function issueSessionCookie(res: Response, req: Request, user: { authSubje
   res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });
 }
 
-export function registerPasswordAuthRoutes(app: Express) {
+export function registerPasswordAuthRoutes(app: RouteTarget) {
   app.post("/api/auth/password/login", jsonBody, async (req: Request, res: Response) => {
     const email = normalizeEmail(req.body?.email);
     const password = typeof req.body?.password === "string" ? req.body.password : "";

@@ -1,5 +1,6 @@
 import express from "express";
-import type { Express, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { RouteTarget } from "./routeTarget";
 import { parseCookie } from "cookie";
 import { eq } from "drizzle-orm";
 import {
@@ -63,7 +64,7 @@ function decodePublicKey(publicKey: string): Uint8Array<ArrayBuffer> {
 
 const jsonBody = express.json({ limit: "1mb" });
 
-export function registerWebauthnRoutes(app: Express) {
+export function registerWebauthnRoutes(app: RouteTarget) {
   app.post("/api/webauthn/register/options", jsonBody, async (req: Request, res: Response) => {
     const user = await getAuthenticatedUser(req);
     if (!user) {

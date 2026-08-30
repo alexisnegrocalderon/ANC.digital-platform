@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { Router, type Express, type Request, type Response } from "express";
+import { Router, type Request, type Response } from "express";
+import type { RouteTarget } from "./routeTarget";
 import { z } from "zod";
 import {
   auditEvents,
@@ -135,7 +136,7 @@ function scopeFor(operation: string): ControlPlaneScope {
   return operation === "read" ? "platform.modules.read" : "platform.modules.write";
 }
 
-export function registerControlPlaneRoutes(app: Express) {
+export function registerControlPlaneRoutes(app: RouteTarget) {
   const router = Router();
 
   router.use(async (request, _response, next) => {

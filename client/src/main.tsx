@@ -4,13 +4,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import App from "./App";
 import { trpc } from "./lib/trpc";
+import { BASE_PATH } from "./lib/basePath";
 import "./index.css";
 
 const queryClient = new QueryClient();
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "/api/trpc",
+      url: `${BASE_PATH}/api/trpc`,
       headers: () => {
         const businessId = typeof window === "undefined" ? null : window.localStorage.getItem("anc-active-business-id");
         return businessId ? { "x-business-id": businessId } : {};

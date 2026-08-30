@@ -10,6 +10,7 @@ import { PasswordLoginForm } from "./components/auth/PasswordLoginForm";
 import { SetupPage } from "./components/auth/SetupPage";
 import { useAuth } from "./hooks/useAuth";
 import { SelectedBusinessProvider, useSelectedBusiness } from "./hooks/useSelectedBusiness";
+import { BASE_PATH } from "./lib/basePath";
 
 function BusinessSelector() {
   const { selectedBusinessId, setSelectedBusinessId } = useSelectedBusiness();
@@ -78,7 +79,7 @@ function AdminDashboard({ name, online }: { name: string; online: boolean }) {
 }
 
 export default function App() {
-  const isSetupPage = typeof window !== "undefined" && window.location.pathname === "/setup";
+  const isSetupPage = typeof window !== "undefined" && window.location.pathname === `${BASE_PATH}/setup`;
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const auth = useAuth();
   const passkeySupported = isPasskeySupported();

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express from "express";
+import express, { Router } from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -17,6 +17,7 @@ import { registerAuthRoutes } from "./auth";
 import { registerWebauthnRoutes } from "./webauthn";
 import { registerPasswordAuthRoutes } from "./passwordAuth";
 import { registerControlPlaneRoutes } from "./controlPlaneRouter";
+import type { RouteTarget } from "./routeTarget";
 
 validateRuntimeConfig();
 
@@ -25,38 +26,45 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
 
-registerAuthRoutes(app);
-registerWebauthnRoutes(app);
-registerPasswordAuthRoutes(app);
+// When set (e.g. "/admin"), the whole app is mounted under that prefix instead of "/" —
+// used to serve this admin from a path on another Vercel project's domain (see
+// server/routeTarget.ts and vite.config.ts's matching VITE_BASE_PATH). Unset by default,
+// which keeps this identical to a normal root-mounted app.
+const basePath = (process.env.BASE_PATH ?? "").replace(/\/+$/, "");
+const mount: RouteTarget = basePath ? Router() : app;
 
-app.post(
+registerAuthRoutes(mount);
+registerWebauthnRoutes(mount);
+registerPasswordAuthRoutes(mount);
+
+mount.post(
   "/api/payments/webhooks/stripe/:businessSlug",
   express.raw({ type: "application/json", limit: "1mb" }),
   (request, response) => handlePaymentWebhook("stripe", request.params.businessSlug, request, response),
 );
-app.post(
+mount.post(
   "/api/payments/webhooks/mercadopago/:businessSlug",
   express.raw({ type: "application/json", limit: "1mb" }),
   (request, response) => handlePaymentWebhook("mercadopago", request.params.businessSlug, request, response),
 );
-app.post(
+mount.post(
   "/api/payments/webhooks/mercadopago-subscription/:businessSlug",
   express.raw({ type: "application/json", limit: "1mb" }),
   (request, response) => handleAgencySubscriptionWebhook(request.params.businessSlug, request, response),
 );
-app.get(
+mount.get(
   "/api/whatsapp/webhooks/:businessSlug",
   (request, response) => handleWhatsAppVerification(request.params.businessSlug, request, response),
 );
-app.post(
+mount.post(
   "/api/whatsapp/webhooks/:businessSlug",
   express.raw({ type: "application/json", limit: "3mb" }),
   (request, response) => handleWhatsAppWebhook(request.params.businessSlug, request, response),
 );
 
-app.use(express.json({ limit: "1mb" }));
-registerControlPlaneRoutes(app);
-app.post("/api/internal/jobs/notifications", async (request, response) => {
+mount.use(express.json({ limit: "1mb" }));
+registerControlPlaneRoutes(mount);
+mount.post("/api/internal/jobs/notifications", async (request, response) => {
   const expectedSecret = process.env.CRON_SECRET?.trim();
   const providedSecret = request.header("x-cron-secret");
   if (process.env.NODE_ENV === "production" && (!expectedSecret || providedSecret !== expectedSecret)) {
@@ -82,7 +90,7 @@ app.post("/api/internal/jobs/notifications", async (request, response) => {
     return response.status(500).json({ error: error instanceof Error ? error.message : "Notification job failed." });
   }
 });
-app.use(
+mount.use(
   "/api/trpc",
   createExpressMiddleware({
     router: appRouter,
@@ -90,7 +98,7 @@ app.use(
   }),
 );
 
-app.get("/api/health", (_req, res) => {
+mount.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "anc-platform" });
 });
 
@@ -104,10 +112,15 @@ const publicPath = process.env.VERCEL
     // for both — the server bundle output is intentionally kept out of `dist/` so it can never
     // collide with (or be served as) a static asset alongside the Vite build.
     path.resolve(__dirname, "../dist/public");
-app.use(express.static(publicPath));
-app.get("*", (_req, res) => {
+mount.use(express.static(publicPath));
+mount.get("*", (_req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
+
+if (basePath) {
+  app.use(basePath, mount as Router);
+  app.get("/", (_req, res) => res.redirect(basePath));
+}
 
 if (!process.env.VERCEL) {
   app.listen(port, () => {

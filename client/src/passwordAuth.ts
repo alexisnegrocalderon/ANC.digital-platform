@@ -1,3 +1,5 @@
+import { BASE_PATH } from "./lib/basePath";
+
 async function readJson(response: Response) {
   const data = await response.json().catch(() => null);
   if (!response.ok) {
@@ -8,7 +10,7 @@ async function readJson(response: Response) {
 }
 
 export async function loginWithPassword(email: string, password: string): Promise<void> {
-  const response = await fetch("/api/auth/password/login", {
+  const response = await fetch(`${BASE_PATH}/api/auth/password/login`, {
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },
@@ -23,7 +25,7 @@ export async function setupAdminAccount(input: {
   password: string;
   name: string;
 }): Promise<void> {
-  const response = await fetch("/api/auth/password/setup", {
+  const response = await fetch(`${BASE_PATH}/api/auth/password/setup`, {
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },

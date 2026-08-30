@@ -1,4 +1,5 @@
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { BASE_PATH } from "./lib/basePath";
 
 export function isPasskeySupported(): boolean {
   return typeof window !== "undefined" && typeof window.PublicKeyCredential !== "undefined";
@@ -14,7 +15,7 @@ async function readJson(response: Response) {
 }
 
 export async function registerPasskey(): Promise<void> {
-  const optionsResponse = await fetch("/api/webauthn/register/options", {
+  const optionsResponse = await fetch(`${BASE_PATH}/api/webauthn/register/options`, {
     method: "POST",
     credentials: "include",
   });
@@ -22,7 +23,7 @@ export async function registerPasskey(): Promise<void> {
 
   const attestation = await startRegistration({ optionsJSON: options });
 
-  const verifyResponse = await fetch("/api/webauthn/register/verify", {
+  const verifyResponse = await fetch(`${BASE_PATH}/api/webauthn/register/verify`, {
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },
@@ -32,7 +33,7 @@ export async function registerPasskey(): Promise<void> {
 }
 
 export async function loginWithPasskey(): Promise<void> {
-  const optionsResponse = await fetch("/api/webauthn/login/options", {
+  const optionsResponse = await fetch(`${BASE_PATH}/api/webauthn/login/options`, {
     method: "POST",
     credentials: "include",
   });
@@ -40,7 +41,7 @@ export async function loginWithPasskey(): Promise<void> {
 
   const assertion = await startAuthentication({ optionsJSON: options });
 
-  const verifyResponse = await fetch("/api/webauthn/login/verify", {
+  const verifyResponse = await fetch(`${BASE_PATH}/api/webauthn/login/verify`, {
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },

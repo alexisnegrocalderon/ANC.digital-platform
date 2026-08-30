@@ -1,6 +1,7 @@
 import { parseCookie } from "cookie";
 import { jwtVerify, SignJWT } from "jose";
-import type { Express, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { RouteTarget } from "./routeTarget";
 import { eq } from "drizzle-orm";
 import { decodeOAuthState, COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE } from "../shared/const";
 import { users } from "../drizzle/schema";
@@ -186,7 +187,7 @@ export async function getAuthenticatedUser(req: Request): Promise<AuthenticatedU
   };
 }
 
-export function registerAuthRoutes(app: Express) {
+export function registerAuthRoutes(app: RouteTarget) {
   app.get("/api/auth/login", (req: Request, res: Response) => {
     const origin = getQueryParam(req, "origin");
     if (!origin) {
