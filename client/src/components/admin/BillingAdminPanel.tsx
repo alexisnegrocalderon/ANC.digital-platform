@@ -12,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { trpc } from "../../lib/trpc";
+import { useSelectedBusiness } from "../../hooks/useSelectedBusiness";
 
 const collectionModeLabels: Record<string, string> = {
   manual_link: "Link manual por cuota",
@@ -36,7 +37,8 @@ function formatAmount(amountCents: number, currency: string) {
 type DraftInstallment = { dueDate: string; amountCents: string };
 
 export function BillingAdminPanel() {
-  const [creatingFor, setCreatingFor] = useState<number | null>(null);
+  const { selectedBusinessId } = useSelectedBusiness();
+  const [isCreatingAgreement, setIsCreatingAgreement] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newCurrency, setNewCurrency] = useState("CLP");
   const [newCollectionMode, setNewCollectionMode] = useState<"manual_link" | "mp_subscription">("manual_link");
@@ -49,7 +51,6 @@ export function BillingAdminPanel() {
   const [addDraftAmount, setAddDraftAmount] = useState("");
 
   const utils = trpc.useUtils();
-  const businesses = trpc.admin.businesses.list.useQuery(undefined, { retry: false });
   const agreements = trpc.admin.billing.agreements.list.useQuery(undefined, { retry: false });
   const agreementDetail = trpc.admin.billing.agreements.get.useQuery(
     { agreementId: selectedAgreementId ?? 0 },
@@ -66,7 +67,7 @@ export function BillingAdminPanel() {
   const createAgreement = trpc.admin.billing.agreements.create.useMutation({
     onSuccess: async (result) => {
       await invalidateAll();
-      setCreatingFor(null);
+      setIsCreatingAgreement(false);
       setNewTitle("");
       setNewInstallments([{ dueDate: "", amountCents: "" }]);
       setSelectedAgreementId(result.agreement.id);
@@ -91,19 +92,17 @@ export function BillingAdminPanel() {
   const cancelSubscription = trpc.admin.billing.subscriptions.cancel.useMutation({ onSuccess: () => invalidateAll() });
   const recreateSubscription = trpc.admin.billing.subscriptions.recreate.useMutation({ onSuccess: () => invalidateAll() });
 
-  const businessList = businesses.data ?? [];
-
   const handleAddDraftRow = () => {
     setNewInstallments((rows) => [...rows, { dueDate: "", amountCents: "" }]);
   };
 
   const handleCreateAgreement = () => {
-    if (creatingFor === null || !newTitle.trim()) return;
+    if (selectedBusinessId === null || !newTitle.trim()) return;
     const installments = newInstallments
       .filter((row) => row.dueDate && row.amountCents)
       .map((row) => ({ dueDate: row.dueDate, amountCents: Math.round(Number(row.amountCents) * 100) }));
     createAgreement.mutate({
-      businessId: creatingFor,
+      businessId: selectedBusinessId,
       title: newTitle.trim(),
       currency: newCurrency,
       collectionMode: newCollectionMode,
@@ -181,26 +180,22 @@ export function BillingAdminPanel() {
       </div>
 
       <div className="admin-control-bar">
-        <label>
-          Nuevo acuerdo para
-          <select
-            value={creatingFor ?? ""}
-            onChange={(event) => setCreatingFor(event.target.value ? Number(event.target.value) : null)}
-          >
-            <option value="">Selecciona un negocio…</option>
-            {businessList.map((business: { id: number; name: string }) => (
-              <option key={business.id} value={business.id}>{business.name}</option>
-            ))}
-          </select>
-        </label>
-        {!businesses.isLoading && businessList.length === 0 ? (
+        <button
+          type="button"
+          className="admin-primary-button"
+          disabled={selectedBusinessId === null}
+          onClick={() => setIsCreatingAgreement((current) => !current)}
+        >
+          <Plus size={14} /> {isCreatingAgreement ? "Cancelar nuevo acuerdo" : "Nuevo acuerdo para el cliente seleccionado"}
+        </button>
+        {selectedBusinessId === null ? (
           <p className="booking-muted">
-            <AlertTriangle size={16} /> No hay negocios cargados todavía — crea uno primero en el panel de negocios.
+            <AlertTriangle size={16} /> Selecciona un cliente arriba para crear un acuerdo.
           </p>
         ) : null}
       </div>
 
-      {creatingFor !== null ? (
+      {isCreatingAgreement && selectedBusinessId !== null ? (
         <div className="membership-list">
           <article className="membership-row">
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", width: "100%" }}>

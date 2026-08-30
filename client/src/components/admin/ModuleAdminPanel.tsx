@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardList, LockKeyhole, Settings2, ShieldCheck } from "lucide-react";
 import type { ModuleKey } from "../../../../shared/module";
 import { trpc } from "../../lib/trpc";
+import { useSelectedBusiness } from "../../hooks/useSelectedBusiness";
 
 type OnboardingChecklistItem = { key: string; label: string; done: boolean; doneAt: string | null };
 
@@ -43,14 +44,9 @@ const maturityLabels: Record<string, string> = {
 };
 
 export function ModuleAdminPanel() {
-  const [selectedBusinessId, setSelectedBusinessId] = useState<number | null>(null);
+  const { selectedBusinessId } = useSelectedBusiness();
   const [selectedPresetKey, setSelectedPresetKey] = useState("events");
   const [selectedKeys, setSelectedKeys] = useState<ModuleKey[]>([]);
-  const [newBusinessName, setNewBusinessName] = useState("");
-  const [newBusinessSlug, setNewBusinessSlug] = useState("");
-  const [newBusinessBrandColor, setNewBusinessBrandColor] = useState("#1a2b3c");
-  const [newBusinessLogoUrl, setNewBusinessLogoUrl] = useState("");
-  const [newBusinessNotes, setNewBusinessNotes] = useState("");
   const [detailBusinessId, setDetailBusinessId] = useState<number | null>(null);
   const [detailForm, setDetailForm] = useState({
     brandColor: "",
@@ -60,35 +56,12 @@ export function ModuleAdminPanel() {
     notes: "",
   });
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && selectedBusinessId !== null) {
-      window.localStorage.setItem("anc-active-business-id", String(selectedBusinessId));
-    }
-  }, [selectedBusinessId]);
   const businesses = trpc.admin.businesses.list.useQuery(undefined, { retry: false }) as {
     data?: AdminBusiness[];
     isLoading: boolean;
   };
   const presets = trpc.admin.presets.list.useQuery(undefined, { retry: false });
   const utils = trpc.useUtils();
-
-  useEffect(() => {
-    if (selectedBusinessId === null && businesses.data && businesses.data.length > 0) {
-      setSelectedBusinessId(businesses.data[0].id);
-    }
-  }, [businesses.data, selectedBusinessId]);
-
-  const createBusiness = trpc.admin.businesses.create.useMutation({
-    onSuccess: async (result) => {
-      await utils.admin.businesses.list.invalidate();
-      setNewBusinessName("");
-      setNewBusinessSlug("");
-      setNewBusinessBrandColor("#1a2b3c");
-      setNewBusinessLogoUrl("");
-      setNewBusinessNotes("");
-      setSelectedBusinessId(result.id);
-    },
-  });
 
   const updateDetails = trpc.admin.businesses.updateDetails.useMutation({
     onSuccess: async () => {
@@ -148,17 +121,6 @@ export function ModuleAdminPanel() {
     setSelectedKeys((current) =>
       enabled ? [...new Set([...current, key])] : current.filter((item) => item !== key),
     );
-  };
-
-  const handleCreateBusiness = () => {
-    if (!newBusinessName.trim()) return;
-    createBusiness.mutate({
-      name: newBusinessName.trim(),
-      slug: newBusinessSlug.trim() || undefined,
-      brandColor: newBusinessBrandColor || undefined,
-      logoUrl: newBusinessLogoUrl.trim() || undefined,
-      notes: newBusinessNotes.trim() || undefined,
-    });
   };
 
   const openBusinessDetail = (business: AdminBusiness) => {
@@ -233,18 +195,6 @@ export function ModuleAdminPanel() {
 
       <div className="admin-control-bar">
         <label>
-          Cliente / negocio
-          <select
-            value={selectedBusinessId ?? ""}
-            onChange={(event) => setSelectedBusinessId(event.target.value ? Number(event.target.value) : null)}
-          >
-            <option value="">Selecciona un negocio…</option>
-            {(businesses.data ?? []).map((business: { id: number; name: string }) => (
-              <option key={business.id} value={business.id}>{business.name}</option>
-            ))}
-          </select>
-        </label>
-        <label>
           Preset inicial
           <select value={selectedPresetKey} onChange={(event) => setSelectedPresetKey(event.target.value)}>
             {(presets.data ?? []).map((preset) => <option value={preset.key} key={preset.key}>{preset.displayName}</option>)}
@@ -261,65 +211,6 @@ export function ModuleAdminPanel() {
           {enable.isPending ? "Aplicando…" : "Aplicar selección"}
         </button>
       </div>
-
-      <div className="admin-control-bar">
-        <label>
-          Nuevo negocio / cliente
-          <input
-            type="text"
-            placeholder="Nombre del cliente"
-            value={newBusinessName}
-            onChange={(event) => setNewBusinessName(event.target.value)}
-          />
-        </label>
-        <label>
-          Slug (opcional)
-          <input
-            type="text"
-            placeholder="se autogenera si lo dejas vacío"
-            value={newBusinessSlug}
-            onChange={(event) => setNewBusinessSlug(event.target.value)}
-          />
-        </label>
-        <label>
-          Color de marca
-          <input
-            type="color"
-            value={newBusinessBrandColor}
-            onChange={(event) => setNewBusinessBrandColor(event.target.value)}
-          />
-        </label>
-        <label>
-          URL de logo (opcional)
-          <input
-            type="text"
-            placeholder="https://…"
-            value={newBusinessLogoUrl}
-            onChange={(event) => setNewBusinessLogoUrl(event.target.value)}
-          />
-        </label>
-        <label>
-          Notas (opcional)
-          <textarea
-            rows={2}
-            placeholder="Contexto del acuerdo, contactos, detalles…"
-            value={newBusinessNotes}
-            onChange={(event) => setNewBusinessNotes(event.target.value)}
-          />
-        </label>
-        <button
-          className="admin-primary-button"
-          type="button"
-          disabled={createBusiness.isPending || !newBusinessName.trim()}
-          onClick={handleCreateBusiness}
-        >
-          {createBusiness.isPending ? "Creando…" : "Crear negocio"}
-        </button>
-      </div>
-      {createBusiness.error ? <p className="admin-error"><AlertTriangle size={15} /> {createBusiness.error.message}</p> : null}
-      {!businesses.isLoading && (businesses.data?.length ?? 0) === 0 ? (
-        <p className="booking-muted">Todavía no hay negocios cargados — creá el primero arriba.</p>
-      ) : null}
 
       <div className="membership-list">
         {(businesses.data ?? []).map((business) => {
