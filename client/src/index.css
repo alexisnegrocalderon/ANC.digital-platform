@@ -1335,6 +1335,81 @@ h2 {
   max-width: 220px;
 }
 
+.password-login-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.password-login-form input {
+  border: 1px solid rgba(25, 25, 25, 0.2);
+  background: transparent;
+  color: inherit;
+  padding: 8px 9px;
+  font: inherit;
+  font-size: 0.82rem;
+  width: 128px;
+}
+
+.setup-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f2eee5;
+  padding: 24px;
+}
+
+.setup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border: 1px solid rgba(25, 25, 25, 0.14);
+  padding: 32px;
+}
+
+.setup-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setup-heading h1 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.setup-lede {
+  color: var(--muted, #777);
+  font-size: 0.85rem;
+  margin: 0 0 6px;
+}
+
+.setup-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--muted, #777);
+}
+
+.setup-card input {
+  border: 1px solid rgba(25, 25, 25, 0.2);
+  background: transparent;
+  color: inherit;
+  padding: 10px 11px;
+  font: inherit;
+}
+
+.setup-error {
+  color: #b3261e;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
 .admin-memberships-section {
   padding: 88px 5vw;
   background: #f2eee5;

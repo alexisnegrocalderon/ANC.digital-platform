@@ -9,11 +9,14 @@ import { MembershipAdminPanel } from "./components/admin/MembershipAdminPanel";
 import { BillingAdminPanel } from "./components/admin/BillingAdminPanel";
 import { BaseModulesPanel } from "./components/base/BaseModulesPanel";
 import { CourseDeliveryPanel } from "./components/courses/CourseDeliveryPanel";
+import { PasswordLoginForm } from "./components/auth/PasswordLoginForm";
+import { SetupPage } from "./components/auth/SetupPage";
 import { useAuth } from "./hooks/useAuth";
 
 const presetLabels = ["Eventos", "Restaurante", "Retail", "Salón", "Gimnasio", "Servicios"];
 
 export default function App() {
+  const isSetupPage = typeof window !== "undefined" && window.location.pathname === "/setup";
   const [selectedPreset, setSelectedPreset] = useState("Eventos");
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const auth = useAuth();
@@ -42,6 +45,10 @@ export default function App() {
   const modules = trpc.modules.list.useQuery(undefined, { retry: false });
   const business = trpc.business.current.useQuery(undefined, { retry: false });
   const enabledModules = trpc.business.enabledModules.useQuery(undefined, { retry: false });
+
+  if (isSetupPage) {
+    return <SetupPage />;
+  }
 
   return (
     <main className="app-shell">
@@ -74,8 +81,14 @@ export default function App() {
             </>
           ) : (
             <>
-              <button type="button" className="auth-button" onClick={auth.login} disabled={auth.loading}>
-                <LogIn size={14} /> Ingresar
+              <PasswordLoginForm />
+              <button
+                type="button"
+                className="auth-button auth-button-secondary"
+                onClick={auth.login}
+                disabled={auth.loading}
+              >
+                <LogIn size={14} /> Ingresar con Manus
               </button>
               {passkeySupported && (
                 <button

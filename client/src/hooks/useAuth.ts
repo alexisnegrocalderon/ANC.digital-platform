@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { trpc } from "../lib/trpc";
 import { startLogin } from "../auth";
 import { loginWithPasskey as loginWithPasskeyRequest, registerPasskey as registerPasskeyRequest } from "../webauthn";
+import { loginWithPassword as loginWithPasswordRequest } from "../passwordAuth";
 
 export function useAuth() {
   const utils = trpc.useUtils();
@@ -29,6 +30,14 @@ export function useAuth() {
     await registerPasskeyRequest();
   }, []);
 
+  const loginWithPassword = useCallback(
+    async (email: string, password: string) => {
+      await loginWithPasswordRequest(email, password);
+      await utils.auth.me.invalidate();
+    },
+    [utils],
+  );
+
   return useMemo(
     () => ({
       user: meQuery.data ?? null,
@@ -39,6 +48,7 @@ export function useAuth() {
       logout,
       loginWithPasskey,
       registerPasskey,
+      loginWithPassword,
     }),
     [
       meQuery.data,
@@ -49,6 +59,7 @@ export function useAuth() {
       logoutMutation.isPending,
       loginWithPasskey,
       registerPasskey,
+      loginWithPassword,
     ],
   );
 }

@@ -15,6 +15,7 @@ import { handleAgencySubscriptionWebhook } from "../modules/agency-billing/webho
 import { requireDb } from "./db";
 import { registerAuthRoutes } from "./auth";
 import { registerWebauthnRoutes } from "./webauthn";
+import { registerPasswordAuthRoutes } from "./passwordAuth";
 import { registerControlPlaneRoutes } from "./controlPlaneRouter";
 
 validateRuntimeConfig();
@@ -26,6 +27,7 @@ const port = Number(process.env.PORT ?? 3000);
 
 registerAuthRoutes(app);
 registerWebauthnRoutes(app);
+registerPasswordAuthRoutes(app);
 
 app.post(
   "/api/payments/webhooks/stripe/:businessSlug",
