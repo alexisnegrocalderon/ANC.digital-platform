@@ -1,6 +1,6 @@
-// Minimal in-memory drizzle-orm test double, scoped to the query shapes actually used by
-// modules/agency-billing/service.ts (plain single-table selects/inserts/updates/deletes,
-// two-table innerJoins, eq/and/inArray where clauses, and asc/desc ordering).
+// Minimal in-memory drizzle-orm test double, scoped to the query shapes commonly used across
+// this repo's services (plain single-table selects/inserts/updates/deletes, two-table
+// innerJoins, eq/and/inArray where clauses, and asc/desc ordering).
 // It is not a general-purpose drizzle emulator — it understands only the SQL fragment shapes
 // that drizzle-orm's `eq`, `and`, `inArray`, `asc` and `desc` helpers actually produce.
 import { Column, Param, SQL, getTableColumns, is } from "drizzle-orm";

@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import type { Request, Response } from "express";
 import { COOKIE_NAME } from "../shared/const";
 import { users } from "../drizzle/schema";
-import { createFakeDb, type FakeDb } from "../modules/agency-billing/testFakeDb";
+import { createFakeDb, type FakeDb } from "./testFakeDb";
 
 let db: FakeDb;
 

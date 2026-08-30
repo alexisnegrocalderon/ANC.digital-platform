@@ -6,7 +6,6 @@ import { EventDemoPanel } from "./components/events/EventDemoPanel";
 import { BookingDemoPanel } from "./components/bookings/BookingDemoPanel";
 import { ModuleAdminPanel } from "./components/admin/ModuleAdminPanel";
 import { MembershipAdminPanel } from "./components/admin/MembershipAdminPanel";
-import { BillingAdminPanel } from "./components/admin/BillingAdminPanel";
 import { BaseModulesPanel } from "./components/base/BaseModulesPanel";
 import { CourseDeliveryPanel } from "./components/courses/CourseDeliveryPanel";
 import { PasswordLoginForm } from "./components/auth/PasswordLoginForm";
@@ -248,7 +247,6 @@ export default function App() {
         <>
           <ModuleAdminPanel />
           <MembershipAdminPanel />
-          <BillingAdminPanel />
         </>
       ) : null}
 

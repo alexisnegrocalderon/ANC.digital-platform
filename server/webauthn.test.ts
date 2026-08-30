@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Request, Response } from "express";
 import { WEBAUTHN_CHALLENGE_COOKIE, COOKIE_NAME } from "../shared/const";
 import { users, webauthnCredentials } from "../drizzle/schema";
-import { createFakeDb, type FakeDb } from "../modules/agency-billing/testFakeDb";
+import { createFakeDb, type FakeDb } from "./testFakeDb";
 
 const generateRegistrationOptions = vi.fn();
 const verifyRegistrationResponse = vi.fn();

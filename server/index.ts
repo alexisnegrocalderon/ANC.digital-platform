@@ -10,8 +10,6 @@ import { handlePaymentWebhook } from "./webhooks/payments";
 import { handleWhatsAppVerification, handleWhatsAppWebhook } from "./webhooks/whatsapp";
 import { processDueAppointmentNotifications } from "../modules/notifications/service";
 import { processDueEmailNotifications } from "../modules/mailing/service";
-import { processDueInstallmentReminders } from "../modules/agency-billing/service";
-import { handleAgencySubscriptionWebhook } from "../modules/agency-billing/webhook";
 import { requireDb } from "./db";
 import { registerAuthRoutes } from "./auth";
 import { registerWebauthnRoutes } from "./webauthn";
@@ -39,11 +37,6 @@ app.post(
   express.raw({ type: "application/json", limit: "1mb" }),
   (request, response) => handlePaymentWebhook("mercadopago", request.params.businessSlug, request, response),
 );
-app.post(
-  "/api/payments/webhooks/mercadopago-subscription/:businessSlug",
-  express.raw({ type: "application/json", limit: "1mb" }),
-  (request, response) => handleAgencySubscriptionWebhook(request.params.businessSlug, request, response),
-);
 app.get(
   "/api/whatsapp/webhooks/:businessSlug",
   (request, response) => handleWhatsAppVerification(request.params.businessSlug, request, response),
@@ -65,17 +58,15 @@ app.post("/api/internal/jobs/notifications", async (request, response) => {
   try {
     const limit = Number(request.body?.limit ?? 20);
     const db = requireDb();
-    const [appointmentNotifications, emailNotifications, installmentReminders] = await Promise.all([
+    const [appointmentNotifications, emailNotifications] = await Promise.all([
       processDueAppointmentNotifications(db, limit),
       processDueEmailNotifications(db, limit),
-      processDueInstallmentReminders(db, limit),
     ]);
     return response.status(200).json({
       ok: true,
       processed: {
         appointmentNotifications,
         emailNotifications,
-        installmentReminders,
       },
     });
   } catch (error) {

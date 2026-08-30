@@ -28,9 +28,7 @@
     "base-modules:smoke": "tsx scripts/base-modules-smoke.ts",
     "pricing:smoke": "tsx scripts/pricing-smoke.ts",
     "course-delivery:smoke": "tsx scripts/course-delivery-smoke.ts",
-    "mailing:smoke": "tsx scripts/mailing-smoke.ts",
-    "agency-billing:schema-smoke": "tsx scripts/agency-billing-schema-smoke.ts",
-    "agency-billing:webhook-smoke": "tsx scripts/agency-subscription-webhook-smoke.ts"
+    "mailing:smoke": "tsx scripts/mailing-smoke.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
