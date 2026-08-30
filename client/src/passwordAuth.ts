@@ -33,3 +33,13 @@ export async function setupAdminAccount(input: {
   });
   await readJson(response);
 }
+
+export async function resetAdminPassword(input: { secret: string; newPassword: string }): Promise<{ email: string | null }> {
+  const response = await fetch(`${BASE_PATH}/api/auth/password/reset`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return readJson(response);
+}

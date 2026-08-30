@@ -118,4 +118,42 @@ export function registerPasswordAuthRoutes(app: RouteTarget) {
       res.status(500).json({ error: "No se pudo completar el setup." });
     }
   });
+
+  // Recovery for a forgotten password: gated by the same one-time ADMIN_SETUP_SECRET used for
+  // initial bootstrap (unlike setup, this one doesn't self-disable — the owner keeps the secret
+  // around specifically to regain access). Resets the single existing platform_admin account
+  // rather than requiring the email, since that's often exactly what's been forgotten too.
+  app.post("/api/auth/password/reset", jsonBody, async (req: Request, res: Response) => {
+    const expectedSecret = process.env.ADMIN_SETUP_SECRET?.trim();
+    const providedSecret = typeof req.body?.secret === "string" ? req.body.secret : "";
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      res.status(403).json({ error: "No autorizado." });
+      return;
+    }
+
+    try {
+      const password = typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
+      if (password.length < MIN_PASSWORD_LENGTH) {
+        res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+        return;
+      }
+
+      const db = requireDb();
+      const existingUsers = await db.select().from(users);
+      const admin = existingUsers.find((row) => row.platformRole === "platform_admin" && row.passwordHash);
+      if (!admin) {
+        res.status(404).json({ error: "No hay ninguna cuenta de administrador para restablecer." });
+        return;
+      }
+
+      const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+      await db.update(users).set({ passwordHash, lastSignedInAt: new Date() }).where(eq(users.id, admin.id));
+
+      await issueSessionCookie(res, req, admin);
+      res.json({ ok: true, email: admin.email });
+    } catch (error) {
+      console.error("[PasswordAuth] reset failed", error instanceof Error ? error.message : "unknown error");
+      res.status(500).json({ error: "No se pudo restablecer la contraseña." });
+    }
+  });
 }

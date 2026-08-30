@@ -8,6 +8,7 @@ import { MembershipAdminPanel } from "./components/admin/MembershipAdminPanel";
 import { BillingAdminPanel } from "./components/admin/BillingAdminPanel";
 import { PasswordLoginForm } from "./components/auth/PasswordLoginForm";
 import { SetupPage } from "./components/auth/SetupPage";
+import { ResetPage } from "./components/auth/ResetPage";
 import { useAuth } from "./hooks/useAuth";
 import { SelectedBusinessProvider, useSelectedBusiness } from "./hooks/useSelectedBusiness";
 import { BASE_PATH } from "./lib/basePath";
@@ -80,6 +81,7 @@ function AdminDashboard({ name, online }: { name: string; online: boolean }) {
 
 export default function App() {
   const isSetupPage = typeof window !== "undefined" && window.location.pathname === `${BASE_PATH}/setup`;
+  const isResetPage = typeof window !== "undefined" && window.location.pathname === `${BASE_PATH}/reset`;
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const auth = useAuth();
   const passkeySupported = isPasskeySupported();
@@ -104,6 +106,10 @@ export default function App() {
   const demoAdminPreview = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.search.includes("admin_modules=1"));
   const canSeeAdmin = auth.user?.platformRole === "platform_admin" || demoAdminPreview;
   const health = trpc.system.health.useQuery(undefined, { retry: false });
+
+  if (isResetPage) {
+    return <ResetPage />;
+  }
 
   if (isSetupPage) {
     return <SetupPage />;
