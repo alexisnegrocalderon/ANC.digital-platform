@@ -94,8 +94,12 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "anc-platform" });
 });
 
-const publicPath =
-  process.env.NODE_ENV === "production"
+const publicPath = process.env.VERCEL
+  ? // Under @vercel/node, `includeFiles` are placed relative to the project root and the
+    // function executes with `process.cwd()` set to that root — not to the bundled file's
+    // own directory, so the __dirname-based logic below doesn't resolve correctly here.
+    path.resolve(process.cwd(), "dist/public")
+  : process.env.NODE_ENV === "production"
     ? path.resolve(__dirname, "public")
     : path.resolve(__dirname, "../dist/public");
 app.use(express.static(publicPath));
@@ -103,6 +107,10 @@ app.get("*", (_req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
 
-app.listen(port, () => {
-  console.log(`[ANC Platform] listening on http://localhost:${port}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`[ANC Platform] listening on http://localhost:${port}`);
+  });
+}
+
+export default app;
