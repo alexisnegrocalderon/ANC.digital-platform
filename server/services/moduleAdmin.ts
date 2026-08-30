@@ -50,6 +50,45 @@ export async function listBusinessesForAdmin(db: any) {
     .orderBy(businesses.name);
 }
 
+function slugify(name: string) {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90);
+}
+
+export async function createBusinessForAdmin(
+  db: any,
+  input: { name: string; slug?: string; currency?: string; timezone?: string },
+) {
+  const name = input.name.trim();
+  if (!name) throw new Error("El nombre del negocio es obligatorio.");
+  const baseSlug = slugify(input.slug?.trim() || name) || `negocio-${Date.now()}`;
+
+  let slug = baseSlug;
+  let attempt = 1;
+  while (true) {
+    const existing = await db.select({ id: businesses.id }).from(businesses).where(eq(businesses.slug, slug)).limit(1);
+    if (existing.length === 0) break;
+    attempt += 1;
+    slug = `${baseSlug}-${attempt}`;
+  }
+
+  const [row] = await db
+    .insert(businesses)
+    .values({
+      name,
+      slug,
+      currency: input.currency?.trim() || undefined,
+      timezone: input.timezone?.trim() || undefined,
+    })
+    .returning();
+  return row;
+}
+
 export async function getAdminModuleCatalog(db: any, businessId?: number) {
   const [catalogRows, enabledRows] = await Promise.all([
     db.select().from(moduleCatalog).where(eq(moduleCatalog.active, true)),

@@ -4,6 +4,7 @@ import { BUSINESS_ROLE_KEYS } from "../shared/auth";
 import { BUSINESS_PRESETS, MODULE_MANIFESTS } from "../modules/core/registry";
 import {
   applyAdminPreset,
+  createBusinessForAdmin,
   getAdminActivationPlan,
   getAdminModuleCatalog,
   getModuleAdminHealth,
@@ -26,6 +27,16 @@ export const adminRouter = router({
   billing: agencyBillingRouter,
   businesses: router({
     list: adminDatabaseProcedure.query(({ ctx }) => listBusinessesForAdmin(ctx.db)),
+    create: adminDatabaseProcedure
+      .input(
+        z.object({
+          name: z.string().min(1).max(180),
+          slug: z.string().max(96).optional(),
+          currency: z.string().length(3).optional(),
+          timezone: z.string().max(64).optional(),
+        }),
+      )
+      .mutation(({ ctx, input }) => createBusinessForAdmin(ctx.db, input)),
   }),
   presets: router({
     list: adminDatabaseProcedure.query(() => BUSINESS_PRESETS),
